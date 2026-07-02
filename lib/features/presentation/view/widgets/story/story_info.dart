@@ -15,13 +15,15 @@ class StoryInfo extends StatefulWidget {
 class _StoryInfoState extends State<StoryInfo> {
   bool _expanded = false;
 
-  static const _genres = ['Action', 'Fantasy', 'Adventure', 'Magic'];
-
   @override
   Widget build(BuildContext context) {
-    final desc = widget.story.description == 'Đang cập nhật...'
-        ? 'Updating...'
-        : 'No description provided for this story.';
+    final desc = widget.story.description?.isNotEmpty == true
+        ? widget.story.description!
+        : 'Chưa có tóm tắt cho truyện này.';
+
+    final genres = widget.story.genres.isNotEmpty 
+        ? widget.story.genres 
+        : ['Chưa cập nhật'];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -31,7 +33,7 @@ class _StoryInfoState extends State<StoryInfo> {
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Synopsis',
+              Text('Tóm tắt',
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -57,7 +59,7 @@ class _StoryInfoState extends State<StoryInfo> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(_expanded ? 'Show Less' : 'Read More',
+                  Text(_expanded ? 'Thu gọn' : 'Đọc thêm',
                       style: const TextStyle(
                           color: AppColors.primary,
                           fontSize: 14,
@@ -70,7 +72,7 @@ class _StoryInfoState extends State<StoryInfo> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text('Genres',
+          const Text('Thể loại',
               style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -81,7 +83,7 @@ class _StoryInfoState extends State<StoryInfo> {
             spacing: 10,
             runSpacing: 10,
             children: [
-              for (final tag in _genres)
+              for (final tag in genres)
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
