@@ -114,33 +114,27 @@ class StoryHeader extends StatelessWidget {
                                 height: 1.33),
                           ),
                           const SizedBox(height: 8),
-                          Text('By ${story.author ?? 'Unknown'}',
+                          Text('Bởi ${story.author ?? 'Unknown'}',
                               style: const TextStyle(
                                   color: AppColors.textMuted,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500)),
                           const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                          
+                          // Hàng hiển thị Views, Rating, Bookmarks
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
                             child: Row(
-                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Ionicons.eye,
-                                    size: 14, color: AppColors.textSubtle),
-                                const SizedBox(width: 6),
-                                Text(Formatters.withCommas(story.views),
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600)),
+                                _buildStatBadge(Ionicons.eye, Formatters.withCommas(story.views), AppColors.textSubtle),
+                                const SizedBox(width: 10),
+                                _buildStatBadge(Ionicons.star, story.averageRating?.toStringAsFixed(1) ?? 'N/A', AppColors.star),
+                                const SizedBox(width: 10),
+                                _buildStatBadge(Ionicons.bookmark, Formatters.withCommas(story.bookmarkCount), AppColors.primary),
                               ],
                             ),
                           ),
+                          
                           const SizedBox(height: 12),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -159,7 +153,7 @@ class StoryHeader extends StatelessWidget {
                                 Icon(Ionicons.time,
                                     size: 14, color: statusColor),
                                 const SizedBox(width: 6),
-                                Text(ongoing ? 'Ongoing' : 'Completed',
+                                Text(ongoing ? 'Đang ra' : 'Đã hoàn thành',
                                     style: TextStyle(
                                         color: statusColor,
                                         fontSize: 13,
@@ -175,6 +169,28 @@ class StoryHeader extends StatelessWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatBadge(IconData icon, String value, Color iconColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: iconColor),
+          const SizedBox(width: 6),
+          Text(value,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600)),
         ],
       ),
     );

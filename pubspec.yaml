@@ -38,6 +38,7 @@ dependencies:
   cached_network_image: ^3.3.1
   shared_preferences: ^2.2.3
   http: ^1.2.1
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:

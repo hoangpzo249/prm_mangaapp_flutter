@@ -15,32 +15,36 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _auth = AuthRepository.instance;
+  final _fullName = TextEditingController();
+  final _email = TextEditingController();
   final _username = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
   bool _loading = false;
 
   Future<void> _register() async {
-    if (_username.text.isEmpty ||
+    if (_fullName.text.isEmpty ||
+        _email.text.isEmpty ||
+        _username.text.isEmpty ||
         _password.text.isEmpty ||
         _confirm.text.isEmpty) {
-      _alert('Error', 'Please fill in all fields.');
+      _alert('Lỗi', 'Vui lòng điền đầy đủ thông tin.');
       return;
     }
     if (_password.text != _confirm.text) {
-      _alert('Error', 'Passwords do not match.');
+      _alert('Lỗi', 'Mật khẩu không khớp.');
       return;
     }
     setState(() => _loading = true);
     try {
-      await _auth.register(_username.text, _password.text);
+      await _auth.register(_username.text, _email.text, _password.text, _fullName.text);
       if (!mounted) return;
-      _alert('Success', 'Registered successfully! Please log in.',
+      _alert('Thành công', 'Đăng ký thành công! Vui lòng đăng nhập.',
           onOk: () =>
               Navigator.pushReplacementNamed(context, AppRoutes.login));
     } catch (e) {
       _alert(
-          'Registration Failed', e.toString().replaceFirst('Exception: ', ''));
+          'Đăng ký thất bại', e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -69,6 +73,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
+    _fullName.dispose();
+    _email.dispose();
     _username.dispose();
     _password.dispose();
     _confirm.dispose();
@@ -91,15 +97,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     SizedBox(height: MediaQuery.of(context).size.height * 0.08),
                     const Logo(fontSize: 28, align: TextAlign.center),
                     const SizedBox(height: 40),
-                    _input(_username, 'Username', Ionicons.person_outline),
+                    _input(_fullName, 'Họ và tên', Ionicons.person_circle_outline),
                     const SizedBox(height: 15),
-                    _input(_password, 'Password', Ionicons.lock_closed_outline,
+                    _input(_email, 'Địa chỉ Email', Ionicons.mail_outline),
+                    const SizedBox(height: 15),
+                    _input(_username, 'Tên đăng nhập', Ionicons.person_outline),
+                    const SizedBox(height: 15),
+                    _input(_password, 'Mật khẩu', Ionicons.lock_closed_outline,
                         obscure: true),
                     const SizedBox(height: 15),
-                    _input(_confirm, 'Confirm Password',
+                    _input(_confirm, 'Xác nhận mật khẩu',
                         Ionicons.lock_closed_outline,
                         obscure: true),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 25),
                     _button(),
                     const SizedBox(height: 25),
                     _footer(),
@@ -129,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Icon(Ionicons.arrow_back, size: 24, color: Colors.white),
             ),
           ),
-          const Text('Sign Up',
+          const Text('Đăng ký tài khoản',
               style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -190,7 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 height: 22,
                 child: CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2))
-            : const Text('Sign Up',
+            : const Text('Đăng ký',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -203,11 +213,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text('Already have an account? ',
+        const Text('Đã có tài khoản? ',
             style: TextStyle(color: AppColors.textSubtle, fontSize: 14)),
         GestureDetector(
           onTap: () => Navigator.pushNamed(context, AppRoutes.login),
-          child: const Text('Login',
+          child: const Text('Đăng nhập',
               style: TextStyle(
                   color: AppColors.logo,
                   fontSize: 14,

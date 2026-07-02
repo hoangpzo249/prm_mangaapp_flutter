@@ -28,8 +28,11 @@ class Chapter {
       title: json['title'] ?? json['chapterTitle'],
       isVip: json['isVip'] == true,
       updatedAt: json['updatedAt'],
-      content: (json['content'] is List)
-          ? List<String>.from((json['content'] as List).map((e) => e.toString()))
+      content: ((json['image'] ?? json['content']) is List)
+          ? List<String>.from(((json['image'] ?? json['content']) as List).map((e) {
+              final url = e.toString();
+              return url.startsWith('http') ? 'https://wsrv.nl/?url=$url' : url;
+            }))
           : const [],
     );
   }

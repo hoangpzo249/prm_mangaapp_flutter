@@ -52,6 +52,7 @@ class _FeaturedSectionState extends State<FeaturedSection> {
       setState(() => _bookmarked = res['isBookmarked'] == true);
       _snack(res['message']?.toString() ?? '');
     } on NotLoggedInException {
+      if (!mounted) return;
       Navigator.pushNamed(context, AppRoutes.login);
     } catch (_) {
       _snack('Failed to toggle bookmark');
@@ -103,7 +104,10 @@ class _FeaturedSectionState extends State<FeaturedSection> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                    fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white),
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 15),
               Text(
@@ -115,7 +119,10 @@ class _FeaturedSectionState extends State<FeaturedSection> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                    color: AppColors.textMuted, fontSize: 16, height: 1.5),
+                  color: AppColors.textMuted,
+                  fontSize: 16,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 20),
               _actions(top),
@@ -148,9 +155,12 @@ class _FeaturedSectionState extends State<FeaturedSection> {
             children: [
               const Icon(Ionicons.star, size: 14, color: AppColors.star),
               Text(
-                ' ${top?.rating ?? '4.6'}',
+                ' ${top?.averageRating?.toStringAsFixed(1) ?? '4.6'}',
                 style: const TextStyle(
-                    color: AppColors.star, fontWeight: FontWeight.bold, fontSize: 12),
+                  color: AppColors.star,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -169,7 +179,10 @@ class _FeaturedSectionState extends State<FeaturedSection> {
       child: Text(
         text,
         style: const TextStyle(
-            color: Color(0xFFCCCCCC), fontSize: 12, fontWeight: FontWeight.bold),
+          color: Color(0xFFCCCCCC),
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -195,11 +208,14 @@ class _FeaturedSectionState extends State<FeaturedSection> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Ionicons.play, size: 18, color: Colors.black),
-                  Text(' START READING',
-                      style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16)),
+                  Text(
+                    ' START READING',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -227,9 +243,10 @@ class _FeaturedSectionState extends State<FeaturedSection> {
                   Text(
                     _bookmarked ? ' SAVED' : ' SAVE',
                     style: TextStyle(
-                        color: _bookmarked ? Colors.white : AppColors.textSubtle,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14),
+                      color: _bookmarked ? Colors.white : AppColors.textSubtle,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),
@@ -271,7 +288,9 @@ class _FeaturedSectionState extends State<FeaturedSection> {
                       height: 120,
                       radius: BorderRadius.circular(15),
                       border: Border.all(
-                        color: selected ? AppColors.primary : Colors.transparent,
+                        color: selected
+                            ? AppColors.primary
+                            : Colors.transparent,
                         width: 2,
                       ),
                     ),
@@ -281,7 +300,9 @@ class _FeaturedSectionState extends State<FeaturedSection> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: selected ? AppColors.primary : AppColors.textSubtle,
+                        color: selected
+                            ? AppColors.primary
+                            : AppColors.textSubtle,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),

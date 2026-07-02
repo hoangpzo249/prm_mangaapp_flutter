@@ -8,7 +8,9 @@ class Story {
   final String? description;
   final String? status;
   final num views;
-  final num? rating;
+  final num? averageRating;
+  final num ratingCount;
+  final num bookmarkCount;
   final String? updatedAt;
   final List<String> genres;
   final Chapter? latestChapter;
@@ -22,7 +24,9 @@ class Story {
     this.description,
     this.status,
     this.views = 0,
-    this.rating,
+    this.averageRating,
+    this.ratingCount = 0,
+    this.bookmarkCount = 0,
     this.updatedAt,
     this.genres = const [],
     this.latestChapter,
@@ -34,29 +38,20 @@ class Story {
     return Story(
       id: (json['_id'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
-      thumbnail: json['thumbnail'],
+      thumbnail: json['thumbnail'] != null && json['thumbnail'].toString().startsWith('http')
+          ? 'https://wsrv.nl/?url=${json['thumbnail']}'
+          : json['thumbnail'],
       author: json['author'],
       description: json['description'],
       status: json['status'],
-      views: json['views'] is num
-          ? json['views']
-          : num.tryParse('${json['views']}') ?? 0,
-      rating: json['rating'] is num
-          ? json['rating']
-          : num.tryParse('${json['rating']}'),
+      views: json['views'] is num ? json['views'] : num.tryParse('${json['views']}') ?? 0,
+      averageRating: json['averageRating'] is num ? json['averageRating'] : num.tryParse('${json['averageRating']}'),
+      ratingCount: json['ratingCount'] is num ? json['ratingCount'] : num.tryParse('${json['ratingCount']}') ?? 0,
+      bookmarkCount: json['bookmarkCount'] is num ? json['bookmarkCount'] : num.tryParse('${json['bookmarkCount']}') ?? 0,
       updatedAt: json['updatedAt'],
-      genres: genresRaw is List
-          ? List<String>.from(genresRaw
-              .map((g) => g is Map ? (g['name'] ?? '').toString() : g.toString()))
-          : const [],
-      latestChapter: json['latestChapter'] is Map<String, dynamic>
-          ? Chapter.fromJson(json['latestChapter'])
-          : null,
-      latestChapters: json['latestChapters'] is List
-          ? List<Chapter>.from((json['latestChapters'] as List)
-              .whereType<Map<String, dynamic>>()
-              .map(Chapter.fromJson))
-          : const [],
+      genres: genresRaw is List ? List<String>.from(genresRaw.map((g) => g is Map ? (g['name'] ?? '').toString() : g.toString())) : const [],
+      latestChapter: json['latestChapter'] is Map<String, dynamic> ? Chapter.fromJson(json['latestChapter']) : null,
+      latestChapters: json['latestChapters'] is List ? List<Chapter>.from((json['latestChapters'] as List).whereType<Map<String, dynamic>>().map(Chapter.fromJson)) : const [],
     );
   }
 }

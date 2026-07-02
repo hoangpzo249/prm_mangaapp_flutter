@@ -1,4 +1,3 @@
-import '../../../core/errors/app_exceptions.dart';
 import '../../../core/networks/api_client.dart';
 import '../../application/services/api_provider.dart';
 import '../../application/services/storage_service.dart';
@@ -12,7 +11,7 @@ class AuthRepository {
   final StorageService _storage = StorageService.instance;
 
   Future<AppUser> login(String username, String password) async {
-    final res = await _api.post('/users/login', body: {
+    final res = await _api.post('/auth/login', body: {
       'username': username,
       'password': password,
     });
@@ -25,26 +24,27 @@ class AuthRepository {
     return user;
   }
 
-  Future<void> register(String username, String password) async {
-    final res = await _api.post('/users/register', body: {
+  Future<void> register(String username, String email, String password, String fullName) async {
+    final res = await _api.post('/auth/register', body: {
       'username': username,
+      'email': email,
       'password': password,
+      'fullName': fullName,
     });
     if (res.statusCode < 200 || res.statusCode >= 300) {
       ApiClient.decodeMap(res);
     }
   }
 
+  Future<AppUser> fetchMe() async {
+    final res = await _api.get('/users/me', auth: true);
+    final data = ApiClient.decodeMap(res);
+    final user = AppUser.fromJson(data);
+    await _storage.setUserInfo(user);
+    return user;
+  }
+
   Future<void> logout() => _storage.clearAuth();
 
   Future<AppUser?> getUserData() => _storage.getUser();
-
-  Future<void> upgradeToVip() async {
-    final token = await _storage.getToken();
-    if (token == null) throw ApiException('No token found');
-    final res = await _api.post('/users/upgrade-vip', auth: true);
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      ApiClient.decodeMap(res);
-    }
-  }
 }
