@@ -35,13 +35,24 @@ class ApiClient {
     );
   }
 
+  Future<http.Response> put(String path, {Object? body, bool auth = false}) async {
+    return http.put(
+      Uri.parse('$baseUrl$path'),
+      headers: await _headers(auth: auth),
+      body: body == null ? null : jsonEncode(body),
+    );
+  }
+
   Future<http.Response> delete(String path, {bool auth = false}) async {
     return http.delete(Uri.parse('$baseUrl$path'), headers: await _headers(auth: auth));
   }
 
   /// Decode JSON body, throwing [ApiException] on non-2xx status.
   static Map<String, dynamic> decodeMap(http.Response res) {
-    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    final dynamic decoded = res.body.isEmpty ? <String, dynamic>{} : jsonDecode(res.body);
+    final data = decoded is Map<String, dynamic>
+        ? decoded
+        : <String, dynamic>{'data': decoded};
     if (res.statusCode < 200 || res.statusCode >= 300) {
       throw ApiException(
         (data['message'] ?? 'Request failed').toString(),
@@ -52,7 +63,20 @@ class ApiClient {
   }
 
   static List<dynamic> decodeList(http.Response res) {
-    if (res.statusCode != 200) throw ApiException('Request failed', status: res.statusCode);
-    return jsonDecode(res.body) as List;
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      try {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        throw ApiException(
+          (data['message'] ?? 'Request failed').toString(),
+          status: res.statusCode,
+        );
+      } catch (error) {
+        if (error is ApiException) rethrow;
+        throw ApiException('Request failed', status: res.statusCode);
+      }
+    }
+    final dynamic decoded = res.body.isEmpty ? <dynamic>[] : jsonDecode(res.body);
+    if (decoded is List<dynamic>) return decoded;
+    throw ApiException('Invalid list response', status: res.statusCode);
   }
 }
