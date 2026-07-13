@@ -32,7 +32,7 @@ class PaymentRepository {
     final data = ApiClient.decodeMap(res);
     final tx = Transaction.fromJson(data);
 
-    // BƯỚC MOCK: Gọi callback luôn để giả lập thành công (Chỉ dùng cho dev/test)
+    // MOCK: fire callback immediately to simulate success (dev/test only)
     try {
       await _api.post('/transactions/callback/momo', body: {
         'appTransactionId': data['appTransactionId'],

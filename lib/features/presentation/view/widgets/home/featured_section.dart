@@ -111,9 +111,7 @@ class _FeaturedSectionState extends State<FeaturedSection> {
               ),
               const SizedBox(height: 15),
               Text(
-                (top?.description != null &&
-                        top!.description!.isNotEmpty &&
-                        top.description != 'Đang cập nhật...')
+                (top?.description != null && top!.description!.isNotEmpty)
                     ? top.description!
                     : 'Read the latest chapters of this thrilling masterpiece on FCOMIC. Tap to start your journey now...',
                 maxLines: 2,
