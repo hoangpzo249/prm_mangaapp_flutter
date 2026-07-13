@@ -24,7 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _loading = false;
   bool _isOtpSent = false;
 
-  Future<void> _sendOtp() async {
+  Future<void> _register() async {
     if (_fullName.text.isEmpty ||
         _email.text.isEmpty ||
         _username.text.isEmpty ||
@@ -39,25 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
     setState(() => _loading = true);
     try {
-      await _auth.sendRegisterOtp(_email.text);
-      if (!mounted) return;
-      setState(() => _isOtpSent = true);
-      _alert('Thành công', 'Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra.');
-    } catch (e) {
-      _alert('Lỗi', e.toString().replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _register() async {
-    if (_otp.text.trim().isEmpty) {
-      _alert('Lỗi', 'Vui lòng nhập mã OTP.');
-      return;
-    }
-    setState(() => _loading = true);
-    try {
-      await _auth.register(_username.text, _email.text, _password.text, _fullName.text, _otp.text.trim());
+      await _auth.register(_username.text, _email.text, _password.text, _fullName.text);
       if (!mounted) return;
       _alert('Thành công', 'Đăng ký thành công! Vui lòng đăng nhập.',
           onOk: () =>
@@ -130,10 +112,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _input(_confirm, 'Xác nhận mật khẩu',
                         Ionicons.lock_closed_outline,
                         obscure: true),
-                    if (_isOtpSent) ...[
-                      const SizedBox(height: 15),
-                      _input(_otp, 'Nhập mã OTP (từ Email)', Ionicons.key_outline),
-                    ],
                     const SizedBox(height: 25),
                     _button(),
                     const SizedBox(height: 25),
@@ -211,7 +189,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _button() {
     return GestureDetector(
-      onTap: _loading ? null : (_isOtpSent ? _register : _sendOtp),
+      onTap: _loading ? null : _register,
       child: Container(
         height: 55,
         decoration: BoxDecoration(
@@ -225,8 +203,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 height: 22,
                 child: CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2))
-            : Text(_isOtpSent ? 'Đăng ký' : 'Nhận OTP',
-                style: const TextStyle(
+            : const Text('Đăng ký',
+                style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold)),

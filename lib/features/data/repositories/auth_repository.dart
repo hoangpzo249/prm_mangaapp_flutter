@@ -31,13 +31,12 @@ class AuthRepository {
     ApiClient.decodeMap(res);
   }
 
-  Future<void> register(String username, String email, String password, String fullName, String otp) async {
+  Future<void> register(String username, String email, String password, String fullName) async {
     final res = await _api.post('/auth/register', body: {
       'username': username,
       'email': email,
       'password': password,
       'fullName': fullName,
-      'otp': otp,
     });
     if (res.statusCode < 200 || res.statusCode >= 300) {
       ApiClient.decodeMap(res);

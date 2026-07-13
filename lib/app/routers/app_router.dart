@@ -4,12 +4,12 @@ import '../../features/presentation/view/screens/auth/login_screen.dart';
 import '../../features/presentation/view/screens/auth/register_screen.dart';
 import '../../features/presentation/view/screens/bookmarks/bookmarks_screen.dart';
 import '../../features/presentation/view/screens/chapter/chapter_reader_screen.dart';
-import '../../features/presentation/view/screens/profile/edit_profile_screen.dart';
-import '../../features/presentation/view/screens/profile/change_password_screen.dart';
-import '../../features/presentation/view/screens/auth/forgot_password_screen.dart';
 import '../../features/presentation/view/screens/main_tabs.dart';
 import '../../features/presentation/view/screens/payment/payment_screen.dart';
 import '../../features/presentation/view/screens/profile/profile_screen.dart';
+import '../../features/presentation/view/screens/profile/edit_profile_screen.dart';
+import '../../features/presentation/view/screens/profile/change_password_screen.dart';
+import '../../features/presentation/view/screens/auth/forgot_password_screen.dart';
 import '../../features/presentation/view/screens/story/story_detail_screen.dart';
 
 /// Central route table.
@@ -21,14 +21,14 @@ class AppRoutes {
   static const home = '/';
   static const login = '/login';
   static const register = '/register';
-  static const forgotPassword = '/forgot-password';
   static const profile = '/profile';
-  static const editProfile = '/edit-profile';
-  static const changePassword = '/change-password';
   static const payment = '/payment';
   static const bookmarks = '/bookmarks';
   static const story = '/story';
   static const chapter = '/chapter';
+  static const forgotPassword = '/forgotPassword';
+  static const editProfile = '/editProfile';
+  static const changePassword = '/changePassword';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final uri = Uri.parse(settings.name ?? '/');
@@ -55,18 +55,18 @@ class AppRoutes {
         return _fade(const LoginScreen(), settings);
       case AppRoutes.register:
         return _fade(const RegisterScreen(), settings);
-      case AppRoutes.forgotPassword:
-        return _fade(const ForgotPasswordScreen(), settings);
       case AppRoutes.profile:
         return _fade(const ProfileScreen(), settings);
-      case AppRoutes.editProfile:
-        return _fade(const EditProfileScreen(), settings);
-      case AppRoutes.changePassword:
-        return _fade(const ChangePasswordScreen(), settings);
       case AppRoutes.payment:
         return _fade(const PaymentScreen(), settings);
       case AppRoutes.bookmarks:
         return _fade(const BookmarksScreen(), settings);
+      case AppRoutes.forgotPassword:
+        return _fade(const ForgotPasswordScreen(), settings);
+      case AppRoutes.editProfile:
+        return _fade(const EditProfileScreen(), settings);
+      case AppRoutes.changePassword:
+        return _fade(const ChangePasswordScreen(), settings);
       default:
         return _fade(const MainTabs(), settings);
     }
@@ -82,4 +82,3 @@ class AppRoutes {
     );
   }
 }
- 
