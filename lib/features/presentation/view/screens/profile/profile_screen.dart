@@ -283,7 +283,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _menu() {
-    final isAdmin = _user?.role == 'admin';
     return Container(
       margin: const EdgeInsets.only(bottom: 30),
       decoration: BoxDecoration(
@@ -293,20 +292,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          if (isAdmin)
-            _menuItem(
-              Ionicons.settings_outline,
-              'Trang quản trị (Admin Dashboard)',
-              () => Navigator.pushNamed(context, AppRoutes.adminDashboard),
-              border: true,
-            ),
           _menuItem(
             Ionicons.bookmark_outline,
-            'Tủ truyện (Đang theo dõi)',
+            'Library (Following)',
             () => Navigator.pushNamed(context, AppRoutes.bookmarks),
             border: true,
           ),
-          _menuItem(Ionicons.time_outline, 'Lịch sử đọc', () {
+          _menuItem(Ionicons.time_outline, 'Reading history', () {
             Navigator.pushNamedAndRemoveUntil(
               context,
               AppRoutes.home,
