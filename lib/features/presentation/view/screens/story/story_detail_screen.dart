@@ -191,8 +191,15 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                               horizontal: 20, vertical: 10),
                           color: AppColors.card,
                         ),
+                        StoryInteractionSection(
+                          storyId: widget.storyId,
+                          showComments: false,
+                        ),
                         ChapterList(storyId: widget.storyId),
-                        StoryInteractionSection(storyId: widget.storyId),
+                        StoryInteractionSection(
+                          storyId: widget.storyId,
+                          showRating: false,
+                        ),
                       ],
                     ),
                   ),
