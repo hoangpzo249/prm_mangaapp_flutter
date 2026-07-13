@@ -42,23 +42,33 @@ class PaymentRepository {
 
   Future<Transaction> deposit(num amountMoney, num amountCoins) async {
     final res = await _api.post('/transactions/deposit', body: {
-      'paymentMethod': 'MOMO',
+      'paymentMethod': 'VNPAY',
       'amountMoney': amountMoney,
       'amountCoins': amountCoins,
     }, auth: true);
 
     final data = ApiClient.decodeMap(res);
-    final tx = Transaction.fromJson(data);
+    return Transaction.fromJson(data);
+  }
 
-    // MOCK: fire callback immediately to simulate success (dev/test only)
-    try {
-      await _api.post('/transactions/callback/momo', body: {
-        'appTransactionId': data['appTransactionId'],
-        'gatewayTransactionId': 'DEV_${DateTime.now().millisecondsSinceEpoch}',
-        'isSuccess': true,
-      });
-    } catch (_) {}
 
-    return tx;
+
+  // --- ADMIN ---
+  Future<List<VipPackage>> getAdminPackages() async {
+    final res = await _api.get('/vip/admin/packages', auth: true);
+    final data = ApiClient.decodeList(res);
+    return data.map((e) => VipPackage.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> createPackage(Map<String, dynamic> body) async {
+    await _api.post('/vip/packages', body: body, auth: true);
+  }
+
+  Future<void> updatePackage(String id, Map<String, dynamic> body) async {
+    await _api.put('/vip/packages/$id', body: body, auth: true);
+  }
+
+  Future<void> deletePackage(String id) async {
+    await _api.delete('/vip/packages/$id', auth: true);
   }
 }
