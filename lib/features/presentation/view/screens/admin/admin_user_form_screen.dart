@@ -43,7 +43,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
       _emailController.text = user.email ?? '';
       _fullNameController.text = user.fullName ?? '';
       _role = user.role ?? 'user';
-      _isBanned = user.toJson()['isBanned'] == true;
+      _isBanned = user.isBanned;
       _vipUntil = user.vipUntil;
     }
   }
@@ -162,7 +162,6 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
 
         final payload = <String, dynamic>{
           'fullName': _fullNameController.text.trim(),
-          'role': _role,
           'isBanned': _isBanned,
           'vipUntil': _vipUntil?.toIso8601String(),
         };
@@ -177,7 +176,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
           'email': _emailController.text.trim(),
           'password': _passwordController.text,
           'fullName': _fullNameController.text.trim(),
-          'role': _role,
+          'role': 'user',
           'isBanned': _isBanned,
         };
 
@@ -301,9 +300,9 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                 },
               ),
               const SizedBox(height: 30),
-              _buildSectionTitle('Vai Trò & Quyền Hạn'),
+              _buildSectionTitle('Vai Trò'),
               const SizedBox(height: 12),
-              _buildRoleSelector(),
+              _buildRoleInfo(),
               const SizedBox(height: 20),
               _buildStatusToggles(),
               const SizedBox(height: 30),
@@ -378,41 +377,65 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
     );
   }
 
-  Widget _buildRoleSelector() {
+  Widget _buildRoleInfo() {
+    final isAdmin = _role == 'admin';
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border, width: 1),
       ),
-      child: DropdownButtonFormField<String>(
-        value: _role,
-        dropdownColor: AppColors.card,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          labelText: 'Vai trò',
-          labelStyle: TextStyle(color: AppColors.textSubtle, fontSize: 14),
-          icon: Icon(
-            Ionicons.shield_outline,
-            color: AppColors.textSubtle,
-            size: 20,
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: isAdmin
+                  ? AppColors.star.withValues(alpha: 0.15)
+                  : AppColors.primary.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              isAdmin
+                  ? Ionicons.shield_checkmark_outline
+                  : Ionicons.person_outline,
+              color: isAdmin ? AppColors.star : AppColors.primary,
+              size: 22,
+            ),
           ),
-        ),
-        items: const [
-          DropdownMenuItem(
-            value: 'user',
-            child: Text('Người dùng thường (User)'),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isAdmin
+                      ? 'Quản trị viên (Admin)'
+                      : 'Người dùng thường (User)',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Vai trò chỉ hiển thị và không thể thay đổi tại đây.',
+                  style: TextStyle(color: AppColors.textSubtle, fontSize: 12),
+                ),
+              ],
+            ),
           ),
-          DropdownMenuItem(
-            value: 'admin',
-            child: Text('Quản trị viên (Admin)'),
+          const Icon(
+            Ionicons.lock_closed_outline,
+            color: AppColors.textDim,
+            size: 18,
           ),
         ],
-        onChanged: (val) {
-          if (val != null) setState(() => _role = val);
-        },
       ),
     );
   }

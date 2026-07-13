@@ -78,7 +78,7 @@ class _AdminUsersListScreenState extends State<AdminUsersListScreen> {
   }
 
   Future<void> _toggleBan(AppUser user) async {
-    final newBanState = !(user.toJson()['isBanned'] == true);
+    final newBanState = !user.isBanned;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -119,7 +119,7 @@ class _AdminUsersListScreenState extends State<AdminUsersListScreen> {
     try {
       await _adminRepo.updateUser(user.id!, {'isBanned': newBanState});
       _loadUsers();
-      _snack(newBanState ? 'Đã cấm user' : 'Đã mở cấm user');
+      _snack(newBanState ? 'Đã cấm người dùng' : 'Đã mở cấm người dùng');
     } catch (e) {
       _snack(
         'Thao tác thất bại: ${e.toString().replaceFirst('Exception: ', '')}',
@@ -242,7 +242,7 @@ class _AdminUsersListScreenState extends State<AdminUsersListScreen> {
   }
 
   Widget _buildUserItem(AppUser user) {
-    final isBanned = user.toJson()['isBanned'] == true;
+    final isBanned = user.isBanned;
     final displayName = user.fullName?.isNotEmpty == true
         ? user.fullName!
         : user.username;
