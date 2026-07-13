@@ -49,13 +49,10 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     }
     _bookmarked = await _bookmarks.checkBookmark(widget.storyId);
 
-    final history = await _history.getReadingHistory();
-    for (final h in history) {
-      if (h.storyId == widget.storyId && h.chapterId != null) {
-        _continueChapterId = h.chapterId;
-        _continueChapterNumber = h.chapterNumber;
-        break;
-      }
+    final entry = await _history.getStoryHistory(widget.storyId);
+    if (entry != null && entry.chapterId != null) {
+      _continueChapterId = entry.chapterId;
+      _continueChapterNumber = entry.chapterNumber;
     }
 
     if (mounted) {

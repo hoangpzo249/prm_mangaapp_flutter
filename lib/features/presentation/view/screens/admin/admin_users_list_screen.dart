@@ -243,145 +243,339 @@ class _AdminUsersListScreenState extends State<AdminUsersListScreen> {
 
   Widget _buildUserItem(AppUser user) {
     final isBanned = user.isBanned;
+    final isAdmin = user.role == 'admin';
     final displayName = user.fullName?.isNotEmpty == true
         ? user.fullName!
         : user.username;
     final vipUntil = user.vipUntil;
+    final borderColor = isBanned
+        ? AppColors.danger.withValues(alpha: 0.4)
+        : isAdmin
+        ? AppColors.primary.withValues(alpha: 0.35)
+        : AppColors.border;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isBanned
-              ? AppColors.danger.withValues(alpha: 0.3)
-              : AppColors.border,
-          width: 1,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.card,
+            AppColors.card.withValues(alpha: 0.75),
+          ],
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: isBanned
-                  ? AppColors.textFaint
-                  : AppColors.primary.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              displayName[0].toUpperCase(),
-              style: TextStyle(
-                color: isBanned ? AppColors.textSubtle : AppColors.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        displayName,
+                _buildAvatar(displayName, isBanned, user.isVip),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              displayName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                height: 1.25,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isAdmin) ...[
+                            const SizedBox(width: 6),
+                            _buildAdminBadge(),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '@${user.username}',
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
+                          color: AppColors.textSubtle,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    if (user.role == 'admin') ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryDark,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'Admin',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(
+                            Ionicons.mail_outline,
+                            size: 12,
+                            color: AppColors.textSubtle,
                           ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              user.email ?? 'Chưa có email',
+                              style: const TextStyle(
+                                color: AppColors.textSubtle,
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (isBanned || (user.isVip && vipUntil != null)) ...[
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            if (isBanned) _buildBannedChip(),
+                            if (user.isVip && vipUntil != null)
+                              _buildVipChip(vipUntil),
+                          ],
                         ),
-                      ),
+                      ],
                     ],
-                    if (user.isVip) ...[
-                      const SizedBox(width: 6),
-                      const Icon(
-                        Ionicons.star,
-                        color: AppColors.star,
-                        size: 14,
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '@${user.username} • ${user.email ?? "No email"}',
-                  style: const TextStyle(
-                    color: AppColors.textSubtle,
-                    fontSize: 12,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-                if (user.isVip && vipUntil != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'VIP đến: ${DateFormat('dd/MM/yyyy').format(vipUntil)}',
-                    style: const TextStyle(
-                      color: AppColors.star,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Column(
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 12),
+            color: AppColors.border.withValues(alpha: 0.5),
+          ),
+          Row(
             children: [
-              IconButton(
-                icon: const Icon(
-                  Ionicons.create_outline,
+              Expanded(
+                child: _buildActionButton(
+                  icon: Ionicons.create_outline,
+                  label: 'Sửa',
                   color: AppColors.primary,
+                  onTap: () async {
+                    final res = await Navigator.pushNamed(
+                      context,
+                      AppRoutes.adminUserForm,
+                      arguments: user,
+                    );
+                    if (res == true) _loadUsers();
+                  },
                 ),
-                onPressed: () async {
-                  final res = await Navigator.pushNamed(
-                    context,
-                    AppRoutes.adminUserForm,
-                    arguments: user,
-                  );
-                  if (res == true) _loadUsers();
-                },
               ),
-              IconButton(
-                icon: Icon(
-                  isBanned ? Ionicons.lock_open_outline : Ionicons.ban_outline,
+              Container(
+                width: 1,
+                height: 22,
+                color: AppColors.border.withValues(alpha: 0.5),
+              ),
+              Expanded(
+                child: _buildActionButton(
+                  icon: isBanned
+                      ? Ionicons.lock_open_outline
+                      : Ionicons.ban_outline,
+                  label: isBanned ? 'Mở cấm' : 'Cấm',
                   color: isBanned ? AppColors.online : AppColors.danger,
-                  size: 20,
+                  onTap: () => _toggleBan(user),
                 ),
-                onPressed: () => _toggleBan(user),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(String displayName, bool isBanned, bool isVip) {
+    final baseColor = isBanned ? AppColors.textFaint : AppColors.primary;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                baseColor.withValues(alpha: 0.28),
+                baseColor.withValues(alpha: 0.12),
+              ],
+            ),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: baseColor.withValues(alpha: 0.5),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: baseColor.withValues(alpha: 0.25),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            displayName[0].toUpperCase(),
+            style: TextStyle(
+              color: isBanned ? AppColors.textSubtle : AppColors.primary,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+        ),
+        if (isVip)
+          Positioned(
+            right: -2,
+            bottom: -2,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.gold, AppColors.goldDeep],
+                ),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.card, width: 2),
+              ),
+              child: const Icon(
+                Ionicons.star,
+                color: Colors.white,
+                size: 10,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAdminBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primary, AppColors.primaryDark],
+        ),
+        borderRadius: BorderRadius.circular(6),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.35),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Ionicons.shield_checkmark, size: 10, color: Colors.white),
+          SizedBox(width: 3),
+          Text(
+            'Admin',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBannedChip() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.danger.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.4)),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Ionicons.ban_outline, size: 11, color: AppColors.danger),
+          SizedBox(width: 4),
+          Text(
+            'Đã bị cấm',
+            style: TextStyle(
+              color: AppColors.danger,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVipChip(DateTime vipUntil) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.gold.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Ionicons.star, size: 11, color: AppColors.gold),
+          const SizedBox(width: 4),
+          Text(
+            'VIP đến ${DateFormat('dd/MM/yyyy').format(vipUntil)}',
+            style: const TextStyle(
+              color: AppColors.gold,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

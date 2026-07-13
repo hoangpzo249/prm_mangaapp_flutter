@@ -33,6 +33,36 @@ class HistoryRepository {
     }
   }
 
+  /// Lấy history của user cho 1 truyện (Continue Reading).
+  /// Ưu tiên server khi đã login; fallback local cho guest hoặc khi lỗi.
+  Future<HistoryItem?> getStoryHistory(String storyId) async {
+    final token = await _storage.getToken();
+    if (token != null) {
+      try {
+        final res = await _api.get('/history/story/$storyId', auth: true);
+        if (res.statusCode == 200) {
+          final body = res.body.trim();
+          if (body.isEmpty || body == 'null') {
+            return _localForStory(storyId);
+          }
+          final map = ApiClient.decodeMap(res);
+          return HistoryItem.fromServer(map);
+        }
+      } catch (_) {
+        // fall through to local
+      }
+    }
+    return _localForStory(storyId);
+  }
+
+  Future<HistoryItem?> _localForStory(String storyId) async {
+    final local = await _storage.getLocalHistory();
+    for (final h in local) {
+      if (h.storyId == storyId && h.chapterId != null) return h;
+    }
+    return null;
+  }
+
   Future<void> deleteReadingHistory(String storyId) async {
     try {
       final token = await _storage.getToken();
