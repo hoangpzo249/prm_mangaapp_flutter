@@ -262,6 +262,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
+          _menuItem(Ionicons.person_outline, 'Cập nhật thông tin', () async {
+            await Navigator.pushNamed(context, AppRoutes.editProfile);
+            _load();
+          }, border: true),
           _menuItem(Ionicons.bookmark_outline, 'Tủ truyện (Đang theo dõi)', () => Navigator.pushNamed(context, AppRoutes.bookmarks), border: true),
           _menuItem(Ionicons.time_outline, 'Lịch sử đọc', () {
             Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (r) => false, arguments: {'tab': 2});

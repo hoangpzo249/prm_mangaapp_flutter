@@ -44,7 +44,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (image != null) {
       setState(() => _uploadingAvatar = true);
       try {
-        final updatedUser = await _auth.uploadAvatar(image.path);
+        final bytes = await image.readAsBytes();
+        final updatedUser = await _auth.uploadAvatar(bytes, image.name);
         setState(() => _user = updatedUser);
         _alert('Thành công', 'Cập nhật ảnh đại diện thành công.');
       } catch (e) {

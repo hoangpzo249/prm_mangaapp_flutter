@@ -84,8 +84,8 @@ class AuthRepository {
     return user;
   }
 
-  Future<AppUser> uploadAvatar(String imagePath) async {
-    final res = await _api.multipartPost('/users/me/avatar', imagePath, 'avatar', auth: true);
+  Future<AppUser> uploadAvatar(List<int> fileBytes, String fileName) async {
+    final res = await _api.multipartPost('/users/me/avatar', fileBytes, fileName, 'avatar', auth: true);
     final data = ApiClient.decodeMap(res);
     final user = AppUser.fromJson(data['user'] as Map<String, dynamic>);
     await _storage.setUserInfo(user);

@@ -47,12 +47,12 @@ class ApiClient {
     return http.delete(Uri.parse('$baseUrl$path'), headers: await _headers(auth: auth));
   }
 
-  Future<http.Response> multipartPost(String path, String filePath, String fieldName, {bool auth = false}) async {
+  Future<http.Response> multipartPost(String path, List<int> fileBytes, String fileName, String fieldName, {bool auth = false}) async {
     final uri = Uri.parse('$baseUrl$path');
     final request = http.MultipartRequest('POST', uri);
     final headers = await _headers(auth: auth, json: false);
     request.headers.addAll(headers);
-    request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
+    request.files.add(http.MultipartFile.fromBytes(fieldName, fileBytes, filename: fileName));
     final streamedResponse = await request.send();
     return http.Response.fromStream(streamedResponse);
   }
