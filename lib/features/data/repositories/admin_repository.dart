@@ -1,8 +1,6 @@
 import '../../../core/networks/api_client.dart';
 import '../../application/services/api_provider.dart';
 import '../../domain/entities/app_user.dart';
-import '../../domain/entities/chapter.dart';
-import '../../domain/entities/story.dart';
 
 class AdminRepository {
   AdminRepository._();
@@ -10,103 +8,108 @@ class AdminRepository {
 
   final ApiClient _api = ApiProvider.client;
 
-  Future<List<AppUser>> getUsers() async {
+  // --- Statistics ---
+  Future<Map<String, dynamic>> fetchOverview() async {
+    final res = await _api.get('/stats/overview', auth: true);
+    return ApiClient.decodeMap(res);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchRevenueChart() async {
+    final res = await _api.get('/stats/revenue-chart', auth: true);
+    final data = ApiClient.decodeList(res);
+    return data.cast<Map<String, dynamic>>();
+  }
+
+  Future<List<Map<String, dynamic>>> fetchUserGrowthChart() async {
+    final res = await _api.get('/stats/user-growth', auth: true);
+    final data = ApiClient.decodeList(res);
+    return data.cast<Map<String, dynamic>>();
+  }
+
+  // --- User Management ---
+  Future<List<AppUser>> fetchUsers() async {
     final res = await _api.get('/users', auth: true);
-    return ApiClient.decodeList(res)
+    final data = ApiClient.decodeList(res);
+    return data
         .whereType<Map<String, dynamic>>()
         .map(AppUser.fromJson)
         .toList();
   }
 
-  Future<AppUser> createUser({
-    required String username,
-    required String email,
-    required String password,
-    String? fullName,
-    String role = 'user',
-    bool isBanned = false,
-  }) async {
-    final res = await _api.post('/users', auth: true, body: {
-      'username': username.trim(),
-      'email': email.trim(),
-      'password': password,
-      'fullName': fullName?.trim(),
-      'role': role,
-      'isBanned': isBanned,
-    });
-    final data = ApiClient.decodeMap(res);
-    return AppUser.fromJson((data['user'] ?? data) as Map<String, dynamic>);
+  Future<void> createUser(Map<String, dynamic> data) async {
+    final res = await _api.post('/users', body: data, auth: true);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Create user failed',
+      );
+    }
   }
 
-  Future<AppUser> updateUser(
-    String id, {
-    String? fullName,
-    String? role,
-    bool? isBanned,
-    DateTime? vipUntil,
-  }) async {
-    final body = <String, dynamic>{};
-    if (fullName != null) body['fullName'] = fullName.trim();
-    if (role != null) body['role'] = role;
-    if (isBanned != null) body['isBanned'] = isBanned;
-    if (vipUntil != null) body['vipUntil'] = vipUntil.toIso8601String();
-    final res = await _api.put('/users/$id', auth: true, body: body);
-    return AppUser.fromJson(ApiClient.decodeMap(res));
+  Future<void> updateUser(String id, Map<String, dynamic> data) async {
+    final res = await _api.put('/users/$id', body: data, auth: true);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Update user failed',
+      );
+    }
+  }
+
+  Future<void> resetPassword(String id, String newPassword) async {
+    final res = await _api.put(
+      '/users/$id/reset-password',
+      body: {'newPassword': newPassword},
+      auth: true,
+    );
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Reset password failed',
+      );
+    }
   }
 
   Future<void> deleteUser(String id) async {
     final res = await _api.delete('/users/$id', auth: true);
-    ApiClient.decodeMap(res);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Delete user failed',
+      );
+    }
   }
 
-  Future<List<Story>> getStories() async {
-    final res = await _api.get('/stories');
-    return ApiClient.decodeList(res)
-        .whereType<Map<String, dynamic>>()
-        .map(Story.fromJson)
-        .toList();
+  // --- Reports & Moderation ---
+  Future<List<Map<String, dynamic>>> fetchReports() async {
+    final res = await _api.get('/reports', auth: true);
+    final data = ApiClient.decodeList(res);
+    return data.cast<Map<String, dynamic>>();
   }
 
-  Future<Story> getStory(String id) async {
-    final res = await _api.get('/stories/$id');
-    return Story.fromJson(ApiClient.decodeMap(res));
+  Future<void> resolveReport(String id, String action) async {
+    final res = await _api.put(
+      '/reports/$id/resolve',
+      body: {'action': action},
+      auth: true,
+    );
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Resolve report failed',
+      );
+    }
   }
 
-  Future<Story> createStory(Map<String, dynamic> body) async {
-    final res = await _api.post('/stories', auth: true, body: body);
-    return Story.fromJson(ApiClient.decodeMap(res));
-  }
-
-  Future<Story> updateStory(String id, Map<String, dynamic> body) async {
-    final res = await _api.put('/stories/$id', auth: true, body: body);
-    return Story.fromJson(ApiClient.decodeMap(res));
-  }
-
-  Future<void> deleteStory(String id) async {
-    final res = await _api.delete('/stories/$id', auth: true);
-    ApiClient.decodeMap(res);
-  }
-
-  Future<List<Chapter>> getChapters(String storyId) async {
-    final res = await _api.get('/chapters/story/$storyId');
-    return ApiClient.decodeList(res)
-        .whereType<Map<String, dynamic>>()
-        .map(Chapter.fromJson)
-        .toList();
-  }
-
-  Future<Chapter> createChapter(Map<String, dynamic> body) async {
-    final res = await _api.post('/chapters', auth: true, body: body);
-    return Chapter.fromJson(ApiClient.decodeMap(res));
-  }
-
-  Future<Chapter> updateChapter(String id, Map<String, dynamic> body) async {
-    final res = await _api.put('/chapters/$id', auth: true, body: body);
-    return Chapter.fromJson(ApiClient.decodeMap(res));
-  }
-
-  Future<void> deleteChapter(String id) async {
-    final res = await _api.delete('/chapters/$id', auth: true);
-    ApiClient.decodeMap(res);
+  Future<void> createReport(
+    String targetType,
+    String targetId,
+    String reason,
+  ) async {
+    final res = await _api.post(
+      '/reports',
+      body: {'targetType': targetType, 'targetId': targetId, 'reason': reason},
+      auth: true,
+    );
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Submit report failed',
+      );
+    }
   }
 }
