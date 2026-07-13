@@ -4,8 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/entities/history_item.dart';
 
-/// SharedPreferences-backed key/value store for auth tokens, user profile
-/// and locally cached reading history.
 class StorageService {
   StorageService._();
   static final StorageService instance = StorageService._();

@@ -12,6 +12,7 @@ import '../../../../domain/entities/story.dart';
 import '../../widgets/story/chapter_list.dart';
 import '../../widgets/story/story_header.dart';
 import '../../widgets/story/story_info.dart';
+import '../../widgets/story/story_interaction_section.dart';
 
 class StoryDetailScreen extends StatefulWidget {
   final String storyId;
@@ -191,6 +192,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                           color: AppColors.card,
                         ),
                         ChapterList(storyId: widget.storyId),
+                        StoryInteractionSection(storyId: widget.storyId),
                       ],
                     ),
                   ),
