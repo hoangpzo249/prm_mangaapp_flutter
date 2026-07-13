@@ -3,6 +3,7 @@ class VipPackage {
   final String name;
   final num durationDays;
   final num priceCoins;
+  final String description;
   final bool isActive;
 
   VipPackage({
@@ -10,6 +11,7 @@ class VipPackage {
     required this.name,
     required this.durationDays,
     required this.priceCoins,
+    this.description = '',
     this.isActive = true,
   });
 
@@ -18,6 +20,7 @@ class VipPackage {
         name: (json['name'] ?? '').toString(),
         durationDays: json['durationDays'] is num ? json['durationDays'] : 0,
         priceCoins: json['priceCoins'] is num ? json['priceCoins'] : 0,
+        description: (json['description'] ?? '').toString(),
         isActive: json['isActive'] == true,
       );
 }

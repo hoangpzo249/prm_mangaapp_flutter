@@ -6,11 +6,13 @@ import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/errors/app_exceptions.dart';
 import '../../../../data/repositories/bookmark_repository.dart';
 import '../../../../data/repositories/chapter_repository.dart';
+import '../../../../data/repositories/history_repository.dart';
 import '../../../../data/repositories/story_repository.dart';
 import '../../../../domain/entities/story.dart';
 import '../../widgets/story/chapter_list.dart';
 import '../../widgets/story/story_header.dart';
 import '../../widgets/story/story_info.dart';
+import '../../widgets/story/story_interaction_section.dart';
 
 class StoryDetailScreen extends StatefulWidget {
   final String storyId;
@@ -24,9 +26,12 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   final _stories = StoryRepository.instance;
   final _chapters = ChapterRepository.instance;
   final _bookmarks = BookmarkRepository.instance;
+  final _history = HistoryRepository.instance;
 
   Story? _story;
   String? _firstChapterId;
+  String? _continueChapterId;
+  num? _continueChapterNumber;
   bool _loading = true;
   bool _bookmarked = false;
 
@@ -44,6 +49,16 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
       _firstChapterId = chapters.first.id;
     }
     _bookmarked = await _bookmarks.checkBookmark(widget.storyId);
+
+    final history = await _history.getReadingHistory();
+    for (final h in history) {
+      if (h.storyId == widget.storyId && h.chapterId != null) {
+        _continueChapterId = h.chapterId;
+        _continueChapterNumber = h.chapterNumber;
+        break;
+      }
+    }
+
     if (mounted) {
       setState(() {
         _story = story;
@@ -55,8 +70,11 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   Future<void> _toggleBookmark() async {
     try {
       final res = await _bookmarks.toggleBookmark(widget.storyId);
-      setState(() => _bookmarked = res['isBookmarked'] == true);
-      _snack(res['message']?.toString() ?? '');
+      final isBookmarked = res['isBookmarked'] == true;
+      setState(() => _bookmarked = isBookmarked);
+      _snack(isBookmarked
+          ? 'Added to your library'
+          : 'Removed from your library');
     } on NotLoggedInException {
       _loginPrompt();
     } catch (_) {
@@ -177,6 +195,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                           color: AppColors.card,
                         ),
                         ChapterList(storyId: widget.storyId),
+                        StoryInteractionSection(storyId: widget.storyId),
                       ],
                     ),
                   ),
@@ -196,7 +215,12 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   }
 
   Widget _bottomBar() {
-    final hasChapter = _firstChapterId != null;
+    final hasContinue = _continueChapterId != null;
+    final targetChapterId = _continueChapterId ?? _firstChapterId;
+    final hasChapter = targetChapterId != null;
+    final label = hasContinue
+        ? 'Continue Chapter ${_continueChapterNumber ?? ''}'.trim()
+        : (hasChapter ? 'Read First Chapter' : 'No Chapters Yet');
     return Container(
       height: 110,
       decoration: const BoxDecoration(
@@ -245,7 +269,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
               child: GestureDetector(
                 onTap: hasChapter
                     ? () => Navigator.pushNamed(context,
-                        '${AppRoutes.chapter}/$_firstChapterId')
+                        '${AppRoutes.chapter}/$targetChapterId')
                     : null,
                 child: Container(
                   height: 60,
@@ -270,10 +294,14 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Ionicons.book, size: 20, color: Colors.white),
+                      Icon(
+                        hasContinue ? Ionicons.play : Ionicons.book,
+                        size: 20,
+                        color: Colors.white,
+                      ),
                       const SizedBox(width: 8),
                       Text(
-                        hasChapter ? 'Read First Chapter' : 'No Chapters Yet',
+                        label,
                         style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
