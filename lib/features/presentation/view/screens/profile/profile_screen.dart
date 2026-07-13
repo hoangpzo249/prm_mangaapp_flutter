@@ -87,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             _header(),
             Expanded(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
@@ -236,10 +236,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          _menuItem(Ionicons.bookmark_outline, 'Library (Following)', () => Navigator.pushNamed(context, AppRoutes.bookmarks), border: true),
-          _menuItem(Ionicons.time_outline, 'Reading history', () {
+          _menuItem(
+            Ionicons.bookmark_outline,
+            'Tủ truyện (Đang theo dõi)',
+            () => Navigator.pushNamed(context, AppRoutes.bookmarks),
+            border: true,
+          ),
+          _menuItem(
+            Ionicons.notifications_outline,
+            'Thông báo',
+            () => Navigator.pushNamed(context, AppRoutes.notifications),
+            border: true,
+          ),
+          _menuItem(
+            Ionicons.receipt_outline,
+            'Lịch sử giao dịch & VIP',
+            () => Navigator.pushNamed(context, AppRoutes.accountActivity),
+            border: true,
+          ),
+          _menuItem(Ionicons.time_outline, 'Lịch sử đọc', () {
             Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (r) => false, arguments: {'tab': 2});
-          }),
+          }, border: _user?.role == 'admin'),
+          if (_user?.role == 'admin')
+            _menuItem(
+              Ionicons.settings_outline,
+              'Quản trị hệ thống',
+              () => Navigator.pushNamed(context, AppRoutes.admin),
+            ),
         ],
       ),
     );
