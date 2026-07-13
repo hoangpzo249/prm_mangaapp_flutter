@@ -15,7 +15,14 @@ import '../../features/presentation/view/screens/notifications/notifications_scr
 import '../../features/presentation/view/screens/payment/payment_screen.dart';
 import '../../features/presentation/view/screens/profile/profile_screen.dart';
 import '../../features/presentation/view/screens/story/story_detail_screen.dart';
-
+import '../../features/presentation/view/screens/payment/transaction_history_screen.dart';
+import '../../features/presentation/view/screens/payment/vip_history_screen.dart';
+import '../../features/presentation/view/screens/admin/admin_vip_package_screen.dart';
+/// Central route table.
+///   /               -> tabs (Home/Explore/History)
+///   /login /register /profile /payment /bookmarks
+///   /story/:id      -> StoryDetailScreen
+///   /chapter/:id    -> ChapterReaderScreen
 class AppRoutes {
   static const String home = '/';
 
@@ -83,8 +90,13 @@ class AppRoutes {
 
       case payment:
         return _fade(const PaymentScreen(), settings);
-
-      case bookmarks:
+      case '/transaction-history':
+        return _fade(const TransactionHistoryScreen(), settings);
+      case '/vip-history':
+        return _fade(const VipHistoryScreen(), settings);
+      case '/admin/vip-packages':
+        return _fade(const AdminVipPackageScreen(), settings);
+      case AppRoutes.bookmarks:
         return _fade(const BookmarksScreen(), settings);
 
       case adminDashboard:

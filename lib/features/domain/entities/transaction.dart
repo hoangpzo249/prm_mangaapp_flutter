@@ -10,6 +10,7 @@ class Transaction {
   final String? gatewayTransactionId;
   final String? packageName;
   final DateTime? createdAt;
+  final String? paymentUrl;
 
   Transaction({
     required this.id,
@@ -23,26 +24,16 @@ class Transaction {
     this.gatewayTransactionId,
     this.packageName,
     this.createdAt,
+    this.paymentUrl,
   });
 
-  factory Transaction.fromJson(Map<String, dynamic> json) {
-    final packageData = json['packageId'];
-    return Transaction(
-      id: (json['_id'] ?? '').toString(),
-      type: (json['type'] ?? '').toString(),
-      status: (json['status'] ?? '').toString(),
-      paymentMethod: (json['paymentMethod'] ?? '').toString(),
-      amountMoney: json['amountMoney'] is num ? json['amountMoney'] as num : 0,
-      amountCoins: json['amountCoins'] is num ? json['amountCoins'] as num : 0,
-      description: (json['description'] ?? '').toString(),
-      appTransactionId: json['appTransactionId']?.toString(),
-      gatewayTransactionId: json['gatewayTransactionId']?.toString(),
-      packageName: packageData is Map<String, dynamic>
-          ? packageData['name']?.toString()
-          : null,
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString())
-          : null,
-    );
-  }
+  factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
+        id: (json['_id'] ?? '').toString(),
+        type: (json['type'] ?? '').toString(),
+        status: (json['status'] ?? '').toString(),
+        amountCoins: json['amountCoins'] is num ? json['amountCoins'] : 0,
+        description: (json['description'] ?? '').toString(),
+        createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
+        paymentUrl: json['paymentUrl']?.toString(),
+      );
 }

@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../data/repositories/auth_repository.dart';
@@ -31,10 +35,56 @@ class _PaymentScreenState extends State<PaymentScreen> {
     {'coins': 1000, 'money': 1000000},
   ];
 
+  StreamSubscription? _linkSubscription;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    _initDeepLinkListener();
+  }
+
+  late final AppLinks _appLinks;
+
+  void _initDeepLinkListener() {
+    if (kIsWeb) return;
+    try {
+      _appLinks = AppLinks();
+      _linkSubscription = _appLinks.uriLinkStream.listen((Uri? uri) async {
+        if (uri != null && uri.scheme == 'mangaapp' && uri.host == 'payment-return') {
+          // Đóng WebView để tránh bị treo state (gây ra lỗi không mở được ở lần tiếp theo)
+          try {
+            await closeInAppWebView();
+          } catch (_) {}
+          
+          final status = uri.queryParameters['status'];
+          if (status == 'success') {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Nạp xu thành công!'),
+                backgroundColor: Colors.green,
+              ));
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Giao dịch thất bại hoặc bị hủy.'),
+                backgroundColor: Colors.red,
+              ));
+            }
+          }
+          _loadData();
+        }
+      });
+    } catch (e) {
+      debugPrint('Deep link error: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -62,15 +112,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Future<void> _deposit(num coins, num money) async {
     setState(() => _loading = true);
     try {
-      await _payment.deposit(money, coins);
-      await _loadData();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Successfully topped up $coins Coins!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      final tx = await _payment.deposit(money, coins);
+      if (tx.paymentUrl != null) {
+        final url = Uri.parse(tx.paymentUrl!);
+        try {
+          bool launched = await launchUrl(url); // Dùng mặc định của nền tảng (sẽ tự chọn Chrome hoặc WebView tốt nhất)
+          if (!launched) {
+            launched = await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+            if (!launched) {
+              if (mounted) {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Lỗi mở trình duyệt'),
+                    content: SelectableText('Không thể mở link trên máy ảo. Vui lòng copy link sau và dán vào trình duyệt máy tính (thay 10.0.2.2 thành localhost nếu cần):\n\n${url.toString()}'),
+                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Đóng'))],
+                  )
+                );
+              }
+            }
+          }
+        } catch (e) {
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi mở link: $e')));
+        }
       }
     } catch (e) {
       if (mounted)
@@ -251,27 +315,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
             borderRadius: BorderRadius.circular(15),
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 10,
-            ),
-            leading: const Icon(
-              Ionicons.logo_bitcoin,
-              color: Colors.orange,
-              size: 30,
-            ),
-            title: Text(
-              '$coins Coins',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            subtitle: const Text(
-              'Pay via MoMo',
-              style: TextStyle(color: AppColors.textDim),
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            leading: const Icon(Ionicons.logo_bitcoin, color: Colors.orange, size: 30),
+            title: Text('$coins Xu', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            subtitle: const Text('Thanh toán qua VNPAY', style: TextStyle(color: AppColors.textDim)),
             trailing: ElevatedButton(
               onPressed: () => _deposit(coins, money),
               style: ElevatedButton.styleFrom(
