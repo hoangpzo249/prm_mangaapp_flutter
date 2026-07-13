@@ -8,6 +8,7 @@ import '../../../../../core/errors/app_exceptions.dart';
 import '../../../../application/services/storage_service.dart';
 import '../../../../data/repositories/chapter_repository.dart';
 import '../../../../data/repositories/history_repository.dart';
+import '../../../../data/repositories/story_repository.dart';
 import '../../../../domain/entities/chapter.dart';
 import '../../../../domain/entities/history_item.dart';
 
@@ -21,6 +22,7 @@ class ChapterReaderScreen extends StatefulWidget {
 
 class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
   final _chapters = ChapterRepository.instance;
+  final _stories = StoryRepository.instance;
   final _history = HistoryRepository.instance;
   final _storage = StorageService.instance;
 
@@ -44,8 +46,11 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
       _chapter = data;
 
       if (data.storyId != null) {
+        final story = await _stories.fetchStoryById(data.storyId!);
         await _storage.pushHistory(HistoryItem(
           storyId: data.storyId!,
+          storyTitle: story?.title,
+          storyThumbnail: story?.thumbnail,
           chapterId: data.id,
           chapterNumber: data.chapterNumber,
           chapterTitle: data.title,
@@ -390,6 +395,10 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
   }
 
   void _openChapterModal() {
+    final searchCtrl = TextEditingController();
+    String query = '';
+    bool newestFirst = true;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -397,104 +406,238 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
       isScrollControlled: true,
       builder: (_) {
         final h = MediaQuery.of(context).size.height * 0.65;
-        return Container(
-          height: h,
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(15),
-                decoration: const BoxDecoration(
-                  border:
-                      Border(bottom: BorderSide(color: AppColors.card, width: 1)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Chapters (${_allChapters.length})',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold)),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(Ionicons.close_circle,
-                          size: 26, color: AppColors.textSubtle),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(
-                      top: 10, bottom: 40, left: 10, right: 10),
-                  itemCount: _allChapters.length,
-                  itemBuilder: (_, i) {
-                    final item = _allChapters[i];
-                    final isCurrent = item.id == _chapter!.id;
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                        if (!isCurrent) _navigateToChapter(item.id);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(15),
+        return StatefulBuilder(builder: (ctx, setModalState) {
+          final filtered = query.isEmpty
+              ? List<Chapter>.from(_allChapters)
+              : _allChapters.where((c) {
+                  final q = query.toLowerCase();
+                  final title = (c.title ?? '').toLowerCase();
+                  final number = c.chapterNumber.toString();
+                  return title.contains(q) || number.contains(q);
+                }).toList();
+          filtered.sort((a, b) => newestFirst
+              ? b.chapterNumber.compareTo(a.chapterNumber)
+              : a.chapterNumber.compareTo(b.chapterNumber));
+
+          return Container(
+            height: h,
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.fromLTRB(15, 15, 15, 12),
+                  decoration: const BoxDecoration(
+                    border: Border(
+                        bottom: BorderSide(color: AppColors.card, width: 1)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text('Chapters',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 8),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 2),
+                                child: Text(
+                                    '${filtered.length}/${_allChapters.length}',
+                                    style: const TextStyle(
+                                        color: AppColors.textDim,
+                                        fontSize: 13)),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () => setModalState(
+                                    () => newestFirst = !newestFirst),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.card,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border:
+                                        Border.all(color: AppColors.border),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        newestFirst
+                                            ? Ionicons.arrow_down
+                                            : Ionicons.arrow_up,
+                                        size: 13,
+                                        color: AppColors.primary,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        newestFirst ? 'Newest' : 'Oldest',
+                                        style: const TextStyle(
+                                            color: AppColors.textBright,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: const Icon(Ionicons.close_circle,
+                                    size: 26, color: AppColors.textSubtle),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        height: 40,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 14),
                         decoration: BoxDecoration(
-                          color: isCurrent
-                              ? AppColors.primary.withValues(alpha: 0.1)
-                              : null,
-                          border: const Border(
-                              bottom: BorderSide(
-                                  color: AppColors.card, width: 1)),
+                          color: AppColors.card,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            const Icon(Ionicons.search,
+                                size: 18, color: AppColors.textSubtle),
+                            const SizedBox(width: 10),
                             Expanded(
-                              child: Text(
-                                'Chapter ${item.chapterNumber}: ${item.title ?? ''}',
-                                style: TextStyle(
-                                  color: isCurrent
-                                      ? AppColors.primary
-                                      : AppColors.textMuted,
-                                  fontSize: 15,
-                                  fontWeight: isCurrent
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
+                              child: TextField(
+                                controller: searchCtrl,
+                                onChanged: (v) => setModalState(
+                                    () => query = v.trim()),
+                                style: const TextStyle(
+                                    color: AppColors.textBright,
+                                    fontSize: 14),
+                                cursorColor: AppColors.primary,
+                                decoration: const InputDecoration(
+                                  isCollapsed: true,
+                                  border: InputBorder.none,
+                                  hintText:
+                                      'Search chapter number or title',
+                                  hintStyle: TextStyle(
+                                      color: AppColors.textDim,
+                                      fontSize: 14),
                                 ),
                               ),
                             ),
-                            if (item.isVip)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: AppColors.gold
-                                      .withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                      color: AppColors.gold
-                                          .withValues(alpha: 0.3)),
+                            if (query.isNotEmpty)
+                              GestureDetector(
+                                onTap: () {
+                                  searchCtrl.clear();
+                                  setModalState(() => query = '');
+                                },
+                                child: const Padding(
+                                  padding: EdgeInsets.only(left: 8),
+                                  child: Icon(Ionicons.close_circle,
+                                      size: 18,
+                                      color: AppColors.textSubtle),
                                 ),
-                                child: const Text('VIP',
-                                    style: TextStyle(
-                                        color: AppColors.gold,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w800)),
                               ),
                           ],
                         ),
                       ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
+                Expanded(
+                  child: filtered.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No chapters match your search.',
+                            style: TextStyle(
+                                color: AppColors.textSubtle, fontSize: 14),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.only(
+                              top: 10, bottom: 40, left: 10, right: 10),
+                          itemCount: filtered.length,
+                          itemBuilder: (_, i) {
+                            final item = filtered[i];
+                            final isCurrent = item.id == _chapter!.id;
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.pop(context);
+                                if (!isCurrent) _navigateToChapter(item.id);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(15),
+                                decoration: BoxDecoration(
+                                  color: isCurrent
+                                      ? AppColors.primary
+                                          .withValues(alpha: 0.1)
+                                      : null,
+                                  border: const Border(
+                                      bottom: BorderSide(
+                                          color: AppColors.card, width: 1)),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Chapter ${item.chapterNumber}: ${item.title ?? ''}',
+                                        style: TextStyle(
+                                          color: isCurrent
+                                              ? AppColors.primary
+                                              : AppColors.textMuted,
+                                          fontSize: 15,
+                                          fontWeight: isCurrent
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ),
+                                    if (item.isVip)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.gold
+                                              .withValues(alpha: 0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          border: Border.all(
+                                              color: AppColors.gold
+                                                  .withValues(alpha: 0.3)),
+                                        ),
+                                        child: const Text('VIP',
+                                            style: TextStyle(
+                                                color: AppColors.gold,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w800)),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          );
+        });
       },
     );
   }

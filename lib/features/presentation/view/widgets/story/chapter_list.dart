@@ -19,10 +19,13 @@ class ChapterList extends StatefulWidget {
 class _ChapterListState extends State<ChapterList> {
   final _chapters = ChapterRepository.instance;
   final _storage = StorageService.instance;
+  final _searchController = TextEditingController();
 
   List<Chapter> _list = [];
   bool _loading = true;
   bool _isVipUser = false;
+  bool _newestFirst = true;
+  String _query = '';
 
   @override
   void initState() {
@@ -30,17 +33,37 @@ class _ChapterListState extends State<ChapterList> {
     _load();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     final user = await _storage.getUser();
     _isVipUser = user?.isVip ?? false;
     final data = await _chapters.fetchChaptersByStoryId(widget.storyId);
-    data.sort((a, b) => b.chapterNumber.compareTo(a.chapterNumber));
     if (mounted) {
       setState(() {
         _list = data;
         _loading = false;
       });
     }
+  }
+
+  List<Chapter> get _visible {
+    final filtered = _query.isEmpty
+        ? List<Chapter>.from(_list)
+        : _list.where((c) {
+            final q = _query.toLowerCase();
+            final title = (c.title ?? '').toLowerCase();
+            final number = c.chapterNumber.toString();
+            return title.contains(q) || number.contains(q);
+          }).toList();
+    filtered.sort((a, b) => _newestFirst
+        ? b.chapterNumber.compareTo(a.chapterNumber)
+        : a.chapterNumber.compareTo(b.chapterNumber));
+    return filtered;
   }
 
   @override
@@ -62,6 +85,8 @@ class _ChapterListState extends State<ChapterList> {
         ),
       );
     }
+
+    final visible = _visible;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -88,11 +113,102 @@ class _ChapterListState extends State<ChapterList> {
                   ),
                 ],
               ),
-              const Icon(Ionicons.filter, size: 20, color: AppColors.textSubtle),
+              _sortToggle(),
             ],
           ),
-          const SizedBox(height: 20),
-          for (final chapter in _list) _row(chapter),
+          const SizedBox(height: 14),
+          _searchField(),
+          const SizedBox(height: 6),
+          if (visible.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 30),
+              child: Center(
+                child: Text('No chapters match your search.',
+                    style:
+                        TextStyle(color: AppColors.textSubtle, fontSize: 14)),
+              ),
+            )
+          else
+            for (final chapter in visible) _row(chapter),
+        ],
+      ),
+    );
+  }
+
+  Widget _sortToggle() {
+    return GestureDetector(
+      onTap: () => setState(() => _newestFirst = !_newestFirst),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _newestFirst ? Ionicons.arrow_down : Ionicons.arrow_up,
+              size: 14,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              _newestFirst ? 'Newest' : 'Oldest',
+              style: const TextStyle(
+                  color: AppColors.textBright,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _searchField() {
+    return Container(
+      height: 42,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          const Icon(Ionicons.search,
+              size: 18, color: AppColors.textSubtle),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              onChanged: (v) => setState(() => _query = v.trim()),
+              style:
+                  const TextStyle(color: AppColors.textBright, fontSize: 14),
+              cursorColor: AppColors.primary,
+              decoration: const InputDecoration(
+                isCollapsed: true,
+                border: InputBorder.none,
+                hintText: 'Search chapter number or title',
+                hintStyle:
+                    TextStyle(color: AppColors.textDim, fontSize: 14),
+              ),
+            ),
+          ),
+          if (_query.isNotEmpty)
+            GestureDetector(
+              onTap: () {
+                _searchController.clear();
+                setState(() => _query = '');
+              },
+              child: const Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: Icon(Ionicons.close_circle,
+                    size: 18, color: AppColors.textSubtle),
+              ),
+            ),
         ],
       ),
     );
