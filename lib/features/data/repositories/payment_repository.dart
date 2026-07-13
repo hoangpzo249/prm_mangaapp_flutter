@@ -51,17 +51,7 @@ class PaymentRepository {
     return Transaction.fromJson(data);
   }
 
-  Future<List<Transaction>> getTransactions({int page = 1, int limit = 20}) async {
-    final res = await _api.get('/transactions?page=$page&limit=$limit', auth: true);
-    final data = ApiClient.decodeList(res);
-    return data.map((e) => Transaction.fromJson(e as Map<String, dynamic>)).toList();
-  }
 
-  Future<List<Map<String, dynamic>>> getMySubscriptions() async {
-    final res = await _api.get('/vip/my-subscriptions', auth: true);
-    final data = ApiClient.decodeList(res);
-    return data.map((e) => e as Map<String, dynamic>).toList();
-  }
 
   // --- ADMIN ---
   Future<List<VipPackage>> getAdminPackages() async {
