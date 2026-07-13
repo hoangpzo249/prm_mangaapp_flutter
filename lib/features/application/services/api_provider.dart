@@ -1,7 +1,12 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/networks/api_client.dart';
 import 'storage_service.dart';
 
-/// Single shared [ApiClient] instance. Points at the same host as the RN app.
+/// Shared API client.
+///
+/// Override the URL when running on a physical device:
+/// flutter run --dart-define=API_BASE_URL=http://192.168.1.3:9999/api
 class ApiProvider {
   ApiProvider._();
 

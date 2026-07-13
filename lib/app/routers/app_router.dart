@@ -11,6 +11,7 @@ import '../../features/presentation/view/screens/auth/register_screen.dart';
 import '../../features/presentation/view/screens/bookmarks/bookmarks_screen.dart';
 import '../../features/presentation/view/screens/chapter/chapter_reader_screen.dart';
 import '../../features/presentation/view/screens/main_tabs.dart';
+import '../../features/presentation/view/screens/notifications/notifications_screen.dart';
 import '../../features/presentation/view/screens/payment/payment_screen.dart';
 import '../../features/presentation/view/screens/profile/profile_screen.dart';
 import '../../features/presentation/view/screens/story/story_detail_screen.dart';
