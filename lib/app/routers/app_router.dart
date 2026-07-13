@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../features/domain/entities/app_user.dart';
+import '../../features/domain/entities/story.dart';
 
+import '../../features/presentation/view/screens/admin/admin_chapter_form_screen.dart';
+import '../../features/presentation/view/screens/admin/admin_chapters_list_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_dashboard_screen.dart';
+import '../../features/presentation/view/screens/admin/admin_stories_list_screen.dart';
+import '../../features/presentation/view/screens/admin/admin_story_form_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_user_form_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_users_list_screen.dart';
 
@@ -38,7 +43,10 @@ class AppRoutes {
   static const String adminDashboard = '/admin-dashboard';
   static const String adminUsers = '/admin-users';
   static const String adminUserForm = '/admin-user-form';
-  static const String adminReports = '/admin-reports';
+  static const String adminStories = '/admin-stories';
+  static const String adminStoryForm = '/admin-story-form';
+  static const String adminChapters = '/admin-chapters';
+  static const String adminChapterForm = '/admin-chapter-form';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final Uri uri = Uri.parse(settings.name ?? home);
@@ -113,8 +121,41 @@ class AppRoutes {
           settings,
         );
 
-      case adminReports:
-        return _fade(const _AdminReportsPlaceholderScreen(), settings);
+      case adminStories:
+        return _fade(const AdminStoriesListScreen(), settings);
+
+      case adminStoryForm:
+        final arguments = settings.arguments;
+
+        return _fade(
+          AdminStoryFormScreen(story: arguments is Story ? arguments : null),
+          settings,
+        );
+
+      case adminChapters:
+        final arguments = settings.arguments;
+
+        if (arguments is Story) {
+          return _fade(AdminChaptersListScreen(story: arguments), settings);
+        }
+
+        return _fade(const _RouteNotFoundScreen(), settings);
+
+      case adminChapterForm:
+        final arguments = settings.arguments;
+
+        if (arguments is AdminChapterFormArgs) {
+          return _fade(
+            AdminChapterFormScreen(
+              storyId: arguments.storyId,
+              storyTitle: arguments.storyTitle,
+              chapter: arguments.chapter,
+            ),
+            settings,
+          );
+        }
+
+        return _fade(const _RouteNotFoundScreen(), settings);
 
       default:
         return _fade(const _RouteNotFoundScreen(), settings);
@@ -143,27 +184,6 @@ class AppRoutes {
           ) {
             return FadeTransition(opacity: animation, child: child);
           },
-    );
-  }
-}
-
-class _AdminReportsPlaceholderScreen extends StatelessWidget {
-  const _AdminReportsPlaceholderScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Báo cáo vi phạm')),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'Chức năng báo cáo vi phạm đang được hoàn thiện.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16),
-          ),
-        ),
-      ),
     );
   }
 }
