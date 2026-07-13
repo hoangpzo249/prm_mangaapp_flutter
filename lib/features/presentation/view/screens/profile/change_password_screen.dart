@@ -1,42 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
-
-import '../../../../../app/routers/app_router.dart';
+ 
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../data/repositories/auth_repository.dart';
-import '../../widgets/logo.dart';
-
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
-
+ 
+class ChangePasswordScreen extends StatefulWidget {
+  const ChangePasswordScreen({super.key});
+ 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
 }
-
-class _LoginScreenState extends State<LoginScreen> {
+ 
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _auth = AuthRepository.instance;
-  final _username = TextEditingController();
-  final _password = TextEditingController();
+  final _oldPassword = TextEditingController();
+  final _newPassword = TextEditingController();
+  final _confirmPassword = TextEditingController();
   bool _loading = false;
-
-  Future<void> _login() async {
-    if (_username.text.isEmpty || _password.text.isEmpty) {
-      _alert('Error', 'Please enter your username and password.');
+ 
+  Future<void> _submit() async {
+    if (_oldPassword.text.isEmpty ||
+        _newPassword.text.isEmpty ||
+        _confirmPassword.text.isEmpty) {
+      _alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin.');
       return;
     }
+    if (_newPassword.text != _confirmPassword.text) {
+      _alert('Lỗi', 'Mật khẩu mới nhập lại không khớp.');
+      return;
+    }
+ 
     setState(() => _loading = true);
     try {
-      await _auth.login(_username.text, _password.text);
+      await _auth.changePassword(_oldPassword.text, _newPassword.text);
       if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (r) => false);
+      _alert('Thành công', 'Đổi mật khẩu thành công.', onOk: () {
+        Navigator.pop(context);
+      });
     } catch (e) {
-      _alert('Login Failed', e.toString().replaceFirst('Exception: ', ''));
+      _alert('Đổi mật khẩu thất bại',
+          e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
-
-  void _alert(String title, String msg) {
+ 
+  void _alert(String title, String msg, {VoidCallback? onOk}) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -45,7 +54,10 @@ class _LoginScreenState extends State<LoginScreen> {
         content: Text(msg, style: const TextStyle(color: AppColors.textLight)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              Navigator.pop(ctx);
+              onOk?.call();
+            },
             child: const Text('OK',
                 style: TextStyle(color: AppColors.primary)),
           ),
@@ -53,14 +65,15 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
+ 
   @override
   void dispose() {
-    _username.dispose();
-    _password.dispose();
+    _oldPassword.dispose();
+    _newPassword.dispose();
+    _confirmPassword.dispose();
     super.dispose();
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,28 +86,24 @@ class _LoginScreenState extends State<LoginScreen> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-                    const Logo(fontSize: 28, align: TextAlign.center),
-                    const SizedBox(height: 40),
-                    _input(_username, 'Username', Ionicons.person_outline),
-                    const SizedBox(height: 15),
-                    _input(_password, 'Password', Ionicons.lock_closed_outline,
-                        obscure: true),
                     const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
-                        child: const Text('Quên mật khẩu?',
-                            style: TextStyle(color: AppColors.primary, fontSize: 14)),
-                      ),
+                    _input(_oldPassword, 'Mật khẩu hiện tại',
+                        Ionicons.lock_closed_outline),
+                    const SizedBox(height: 15),
+                    _input(_newPassword, 'Mật khẩu mới',
+                        Ionicons.key_outline),
+                    const SizedBox(height: 15),
+                    _input(_confirmPassword, 'Nhập lại mật khẩu mới',
+                        Ionicons.key_outline),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Mật khẩu mới tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.',
+                      style: TextStyle(color: AppColors.textDim, fontSize: 12),
                     ),
                     const SizedBox(height: 25),
                     _button(),
-                    const SizedBox(height: 25),
-                    _footer(),
                   ],
                 ),
               ),
@@ -104,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
+ 
   Widget _header() {
     return Container(
       padding: const EdgeInsets.all(15),
@@ -114,14 +123,13 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.pushNamedAndRemoveUntil(
-                context, AppRoutes.home, (r) => false),
+            onTap: () => Navigator.maybePop(context),
             child: const Padding(
               padding: EdgeInsets.only(right: 15),
               child: Icon(Ionicons.arrow_back, size: 24, color: Colors.white),
             ),
           ),
-          const Text('Login',
+          const Text('Đổi mật khẩu',
               style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -130,9 +138,9 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
+ 
   Widget _input(TextEditingController c, String hint, IconData icon,
-      {bool obscure = false}) {
+      {bool obscure = true}) {
     return Container(
       height: 55,
       padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -166,10 +174,10 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
+ 
   Widget _button() {
     return GestureDetector(
-      onTap: _loading ? null : _login,
+      onTap: _loading ? null : _submit,
       child: Container(
         height: 55,
         decoration: BoxDecoration(
@@ -183,30 +191,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 22,
                 child: CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2))
-            : const Text('Login',
+            : const Text('Xác nhận đổi mật khẩu',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold)),
       ),
-    );
-  }
-
-  Widget _footer() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text("Don't have an account? ",
-            style: TextStyle(color: AppColors.textSubtle, fontSize: 14)),
-        GestureDetector(
-          onTap: () => Navigator.pushNamed(context, AppRoutes.register),
-          child: const Text('Sign Up',
-              style: TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold)),
-        ),
-      ],
     );
   }
 }

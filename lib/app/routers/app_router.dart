@@ -4,6 +4,9 @@ import '../../features/presentation/view/screens/auth/login_screen.dart';
 import '../../features/presentation/view/screens/auth/register_screen.dart';
 import '../../features/presentation/view/screens/bookmarks/bookmarks_screen.dart';
 import '../../features/presentation/view/screens/chapter/chapter_reader_screen.dart';
+import '../../features/presentation/view/screens/profile/edit_profile_screen.dart';
+import '../../features/presentation/view/screens/profile/change_password_screen.dart';
+import '../../features/presentation/view/screens/auth/forgot_password_screen.dart';
 import '../../features/presentation/view/screens/main_tabs.dart';
 import '../../features/presentation/view/screens/payment/payment_screen.dart';
 import '../../features/presentation/view/screens/profile/profile_screen.dart';
@@ -18,7 +21,10 @@ class AppRoutes {
   static const home = '/';
   static const login = '/login';
   static const register = '/register';
+  static const forgotPassword = '/forgot-password';
   static const profile = '/profile';
+  static const editProfile = '/edit-profile';
+  static const changePassword = '/change-password';
   static const payment = '/payment';
   static const bookmarks = '/bookmarks';
   static const story = '/story';
@@ -49,8 +55,14 @@ class AppRoutes {
         return _fade(const LoginScreen(), settings);
       case AppRoutes.register:
         return _fade(const RegisterScreen(), settings);
+      case AppRoutes.forgotPassword:
+        return _fade(const ForgotPasswordScreen(), settings);
       case AppRoutes.profile:
         return _fade(const ProfileScreen(), settings);
+      case AppRoutes.editProfile:
+        return _fade(const EditProfileScreen(), settings);
+      case AppRoutes.changePassword:
+        return _fade(const ChangePasswordScreen(), settings);
       case AppRoutes.payment:
         return _fade(const PaymentScreen(), settings);
       case AppRoutes.bookmarks:
@@ -70,3 +82,4 @@ class AppRoutes {
     );
   }
 }
+ 

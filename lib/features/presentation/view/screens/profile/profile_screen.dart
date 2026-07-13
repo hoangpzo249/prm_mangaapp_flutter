@@ -127,7 +127,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
           ),
-          const SizedBox(width: 40),
+          GestureDetector(
+            onTap: () async {
+              await Navigator.pushNamed(context, AppRoutes.editProfile);
+              _load();
+            },
+            child: const Padding(
+              padding: EdgeInsets.all(5),
+              child: Icon(Ionicons.create_outline, size: 24, color: Colors.white),
+            ),
+          ),
         ],
       ),
     );
@@ -135,6 +144,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _avatar() {
     final displayName = _user?.fullName?.isNotEmpty == true ? _user!.fullName! : (_user?.username ?? 'U');
+    final avatarUrl = _user?.avatar;
+
     return Padding(
       padding: const EdgeInsets.only(top: 20, bottom: 20),
       child: Column(
@@ -144,9 +155,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             height: 80,
             decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
             alignment: Alignment.center,
-            child: Text(
-              displayName[0].toUpperCase(),
-              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+            child: ClipOval(
+              child: avatarUrl != null && avatarUrl.isNotEmpty
+                  ? Image.network(
+                      avatarUrl,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Text(
+                        displayName[0].toUpperCase(),
+                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    )
+                  : Text(
+                      displayName[0].toUpperCase(),
+                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
             ),
           ),
           const SizedBox(height: 15),
@@ -241,6 +265,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _menuItem(Ionicons.bookmark_outline, 'Tủ truyện (Đang theo dõi)', () => Navigator.pushNamed(context, AppRoutes.bookmarks), border: true),
           _menuItem(Ionicons.time_outline, 'Lịch sử đọc', () {
             Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (r) => false, arguments: {'tab': 2});
+          }, border: true),
+          _menuItem(Ionicons.lock_closed_outline, 'Đổi mật khẩu', () {
+            Navigator.pushNamed(context, AppRoutes.changePassword);
           }),
         ],
       ),

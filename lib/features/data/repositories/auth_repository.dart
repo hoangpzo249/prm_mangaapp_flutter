@@ -24,22 +24,70 @@ class AuthRepository {
     return user;
   }
 
-  Future<void> register(String username, String email, String password, String fullName) async {
+  Future<void> sendRegisterOtp(String email) async {
+    final res = await _api.post('/auth/register/send-otp', body: {
+      'email': email,
+    });
+    ApiClient.decodeMap(res);
+  }
+
+  Future<void> register(String username, String email, String password, String fullName, String otp) async {
     final res = await _api.post('/auth/register', body: {
       'username': username,
       'email': email,
       'password': password,
       'fullName': fullName,
+      'otp': otp,
     });
     if (res.statusCode < 200 || res.statusCode >= 300) {
       ApiClient.decodeMap(res);
     }
   }
 
+  Future<void> changePassword(String oldPassword, String newPassword) async {
+    final res = await _api.post('/auth/change-password', body: {
+      'oldPassword': oldPassword,
+      'newPassword': newPassword,
+    }, auth: true);
+    ApiClient.decodeMap(res);
+  }
+
+  Future<void> forgotPassword(String email) async {
+    final res = await _api.post('/auth/forgot-password', body: {
+      'email': email,
+    });
+    ApiClient.decodeMap(res);
+  }
+
+  Future<void> resetPassword(String email, String otp, String newPassword) async {
+    final res = await _api.post('/auth/reset-password', body: {
+      'email': email,
+      'otp': otp,
+      'newPassword': newPassword,
+    });
+    ApiClient.decodeMap(res);
+  }
+ 
   Future<AppUser> fetchMe() async {
     final res = await _api.get('/users/me', auth: true);
     final data = ApiClient.decodeMap(res);
     final user = AppUser.fromJson(data);
+    await _storage.setUserInfo(user);
+    return user;
+  }
+
+  Future<AppUser> updateProfile(String fullName) async {
+    final res = await _api.put('/users/me', body: {'fullName': fullName}, auth: true);
+    final data = ApiClient.decodeMap(res);
+    final user = AppUser.fromJson(data['user'] as Map<String, dynamic>);
+    await _storage.setUserInfo(user);
+    return user;
+  }
+
+  Future<AppUser> uploadAvatar(String imagePath) async {
+    final res = await _api.multipartPost('/users/me/avatar', imagePath, 'avatar', auth: true);
+    final data = ApiClient.decodeMap(res);
+    final user = AppUser.fromJson(data['user'] as Map<String, dynamic>);
     await _storage.setUserInfo(user);
     return user;
   }

@@ -35,8 +35,26 @@ class ApiClient {
     );
   }
 
+  Future<http.Response> put(String path, {Object? body, bool auth = false}) async {
+    return http.put(
+      Uri.parse('$baseUrl$path'),
+      headers: await _headers(auth: auth),
+      body: body == null ? null : jsonEncode(body),
+    );
+  }
+
   Future<http.Response> delete(String path, {bool auth = false}) async {
     return http.delete(Uri.parse('$baseUrl$path'), headers: await _headers(auth: auth));
+  }
+
+  Future<http.Response> multipartPost(String path, String filePath, String fieldName, {bool auth = false}) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final request = http.MultipartRequest('POST', uri);
+    final headers = await _headers(auth: auth, json: false);
+    request.headers.addAll(headers);
+    request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
+    final streamedResponse = await request.send();
+    return http.Response.fromStream(streamedResponse);
   }
 
   /// Decode JSON body, throwing [ApiException] on non-2xx status.
