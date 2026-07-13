@@ -50,9 +50,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
       }
     } catch (e) {
       if (mounted) {
+<<<<<<< HEAD
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Lỗi tải dữ liệu: $e')));
+=======
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load data: $e')));
+>>>>>>> b6823d82887991fb8ee0e4343f0db1076cc1df5b
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -63,8 +67,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() => _loading = true);
     try {
       await _payment.deposit(money, coins);
-      await _loadData(); // Tải lại số dư
+      await _loadData();
       if (mounted) {
+<<<<<<< HEAD
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Đã nạp thành công $coins Xu!'),
@@ -77,6 +82,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+=======
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Successfully topped up $coins Coins!'),
+          backgroundColor: Colors.green,
+        ));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+>>>>>>> b6823d82887991fb8ee0e4343f0db1076cc1df5b
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -85,20 +99,27 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Future<void> _buyVip(VipPackage pkg) async {
     final balance = _user?.wallet?.balance ?? 0;
     if (balance < pkg.priceCoins) {
+<<<<<<< HEAD
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Số dư ví không đủ! Vui lòng nạp thêm xu.'),
           backgroundColor: AppColors.danger,
         ),
       );
+=======
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Insufficient balance! Please top up more coins.'),
+        backgroundColor: AppColors.danger,
+      ));
+>>>>>>> b6823d82887991fb8ee0e4343f0db1076cc1df5b
       return;
     }
 
-    // Xác nhận mua
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
+<<<<<<< HEAD
         title: const Text(
           'Xác nhận mua VIP',
           style: TextStyle(color: Colors.white),
@@ -122,6 +143,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ),
             ),
           ),
+=======
+        title: const Text('Confirm VIP purchase', style: TextStyle(color: Colors.white)),
+        content: Text('${pkg.priceCoins} Coins will be deducted to buy ${pkg.name}. Current balance: $balance Coins.', style: const TextStyle(color: AppColors.textLight)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Confirm', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))),
+>>>>>>> b6823d82887991fb8ee0e4343f0db1076cc1df5b
         ],
       ),
     );
@@ -131,12 +159,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() => _loading = true);
     try {
       await _payment.buyVipPackage(pkg.id);
-      await _loadData(); // Cập nhật vipUntil và balance
+      await _loadData();
       if (mounted) {
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
             backgroundColor: AppColors.card,
+<<<<<<< HEAD
             title: const Text(
               '🎉 Chúc mừng!',
               style: TextStyle(color: Colors.white),
@@ -159,6 +188,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+=======
+            title: const Text('Congratulations!', style: TextStyle(color: Colors.white)),
+            content: const Text('You have successfully purchased the VIP membership package!', style: TextStyle(color: AppColors.textLight)),
+            actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Awesome'))],
+          )
+        );
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+>>>>>>> b6823d82887991fb8ee0e4343f0db1076cc1df5b
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -177,17 +216,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
             icon: const Icon(Ionicons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
+<<<<<<< HEAD
           title: const Text(
             'Quản lý Xu & VIP',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
+=======
+          title: const Text('Coins & VIP', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+>>>>>>> b6823d82887991fb8ee0e4343f0db1076cc1df5b
           bottom: const TabBar(
             indicatorColor: AppColors.primary,
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textSubtle,
             tabs: [
-              Tab(text: 'NẠP XU', icon: Icon(Ionicons.cash_outline)),
-              Tab(text: 'MUA GÓI VIP', icon: Icon(Ionicons.star)),
+              Tab(text: 'TOP UP', icon: Icon(Ionicons.cash_outline)),
+              Tab(text: 'BUY VIP', icon: Icon(Ionicons.star)),
             ],
           ),
         ),
@@ -218,6 +261,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         children: [
           const Icon(Ionicons.wallet_outline, color: AppColors.textLight),
           const SizedBox(width: 10),
+<<<<<<< HEAD
           const Text(
             'Số dư hiện tại:',
             style: TextStyle(color: AppColors.textLight, fontSize: 16),
@@ -231,6 +275,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
+=======
+          const Text('Current balance:', style: TextStyle(color: AppColors.textLight, fontSize: 16)),
+          const Spacer(),
+          Text('${NumberFormat('#,###').format(balance)} Coins', style: const TextStyle(color: Colors.orange, fontSize: 20, fontWeight: FontWeight.bold)),
+>>>>>>> b6823d82887991fb8ee0e4343f0db1076cc1df5b
         ],
       ),
     );
@@ -252,6 +301,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             borderRadius: BorderRadius.circular(15),
           ),
           child: ListTile(
+<<<<<<< HEAD
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 20,
               vertical: 10,
@@ -273,6 +323,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
               'Thanh toán qua MoMo',
               style: TextStyle(color: AppColors.textDim),
             ),
+=======
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            leading: const Icon(Ionicons.logo_bitcoin, color: Colors.orange, size: 30),
+            title: Text('$coins Coins', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            subtitle: const Text('Pay via MoMo', style: TextStyle(color: AppColors.textDim)),
+>>>>>>> b6823d82887991fb8ee0e4343f0db1076cc1df5b
             trailing: ElevatedButton(
               onPressed: () => _deposit(coins, money),
               style: ElevatedButton.styleFrom(
@@ -283,7 +339,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: Text('${NumberFormat('#,###').format(money)} đ'),
+              child: Text('${NumberFormat('#,###').format(money)} VND'),
             ),
           ),
         );
@@ -293,12 +349,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Widget _buildVipTab() {
     if (_packages.isEmpty) {
+<<<<<<< HEAD
       return const Center(
         child: Text(
           'Không có gói VIP nào',
           style: TextStyle(color: AppColors.textDim),
         ),
       );
+=======
+      return const Center(child: Text('No VIP packages available', style: TextStyle(color: AppColors.textDim)));
+>>>>>>> b6823d82887991fb8ee0e4343f0db1076cc1df5b
     }
 
     return ListView.builder(
@@ -339,10 +399,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ],
                 ),
                 const SizedBox(height: 10),
+<<<<<<< HEAD
                 Text(
                   '⏳ Thời hạn: ${pkg.durationDays} ngày',
                   style: const TextStyle(color: AppColors.textLight),
                 ),
+=======
+                Text('Duration: ${pkg.durationDays} days', style: const TextStyle(color: AppColors.textLight)),
+>>>>>>> b6823d82887991fb8ee0e4343f0db1076cc1df5b
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
@@ -363,6 +427,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         color: Colors.white,
                       ),
                     ),
+<<<<<<< HEAD
+=======
+                    child: Text('Buy package (${pkg.priceCoins} Coins)', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+>>>>>>> b6823d82887991fb8ee0e4343f0db1076cc1df5b
                   ),
                 ),
               ],

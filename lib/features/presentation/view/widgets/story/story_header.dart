@@ -16,10 +16,11 @@ class StoryHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final ongoing = story.status == 'Ongoing';
     final statusColor = ongoing ? AppColors.online : AppColors.primary;
+    final topInset = MediaQuery.of(context).padding.top;
 
     return Container(
       color: AppColors.background,
-      padding: const EdgeInsets.only(top: 50, bottom: 30),
+      padding: EdgeInsets.only(top: topInset + 8, bottom: 20),
       child: Stack(
         children: [
           Positioned(
@@ -27,7 +28,7 @@ class StoryHeader extends StatelessWidget {
             left: 0,
             right: 0,
             child: SizedBox(
-              height: 380,
+              height: 360,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -72,7 +73,7 @@ class StoryHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
@@ -114,14 +115,13 @@ class StoryHeader extends StatelessWidget {
                                 height: 1.33),
                           ),
                           const SizedBox(height: 8),
-                          Text('Bởi ${story.author ?? 'Unknown'}',
+                          Text('By ${story.author ?? 'Unknown'}',
                               style: const TextStyle(
                                   color: AppColors.textMuted,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500)),
                           const SizedBox(height: 12),
                           
-                          // Hàng hiển thị Views, Rating, Bookmarks
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
@@ -153,7 +153,7 @@ class StoryHeader extends StatelessWidget {
                                 Icon(Ionicons.time,
                                     size: 14, color: statusColor),
                                 const SizedBox(width: 6),
-                                Text(ongoing ? 'Đang ra' : 'Đã hoàn thành',
+                                Text(ongoing ? 'Ongoing' : 'Completed',
                                     style: TextStyle(
                                         color: statusColor,
                                         fontSize: 13,

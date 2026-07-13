@@ -20,7 +20,7 @@ class HistoryItem {
   factory HistoryItem.fromJson(Map<String, dynamic> json) => HistoryItem(
         storyId: (json['storyId'] ?? '').toString(),
         storyTitle: json['storyTitle'],
-        storyThumbnail: json['storyThumbnail'],
+        storyThumbnail: _proxyThumb(json['storyThumbnail']),
         chapterId: json['chapterId']?.toString(),
         chapterNumber: json['chapterNumber'] is num
             ? json['chapterNumber']
@@ -35,13 +35,22 @@ class HistoryItem {
     return HistoryItem(
       storyId: (story is Map ? story['_id'] : story).toString(),
       storyTitle: story is Map ? story['title'] : null,
-      storyThumbnail: story is Map ? story['thumbnail'] : null,
+      storyThumbnail:
+          story is Map ? _proxyThumb(story['thumbnail']) : null,
       chapterId: chapter is Map ? chapter['_id']?.toString() : null,
       chapterNumber: chapter is Map ? chapter['chapterNumber'] : null,
       chapterTitle:
           chapter is Map ? (chapter['title'] ?? chapter['chapterTitle']) : null,
       readAt: json['updatedAt'],
     );
+  }
+
+  static String? _proxyThumb(dynamic raw) {
+    if (raw == null) return null;
+    final s = raw.toString();
+    if (s.isEmpty) return null;
+    if (s.startsWith('https://wsrv.nl/')) return s;
+    return s.startsWith('http') ? 'https://wsrv.nl/?url=$s' : s;
   }
 
   Map<String, dynamic> toJson() => {

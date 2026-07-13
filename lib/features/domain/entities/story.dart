@@ -33,6 +33,14 @@ class Story {
     this.latestChapters = const [],
   });
 
+  static String? _cleanPlaceholder(dynamic raw) {
+    if (raw == null) return null;
+    final s = raw.toString().trim();
+    if (s.isEmpty) return null;
+    if (s == 'Đang cập nhật' || s == 'Đang cập nhật...') return null;
+    return s;
+  }
+
   factory Story.fromJson(Map<String, dynamic> json) {
     final genresRaw = json['genres'];
     return Story(
@@ -41,8 +49,8 @@ class Story {
       thumbnail: json['thumbnail'] != null && json['thumbnail'].toString().startsWith('http')
           ? 'https://wsrv.nl/?url=${json['thumbnail']}'
           : json['thumbnail'],
-      author: json['author'],
-      description: json['description'],
+      author: _cleanPlaceholder(json['author']),
+      description: _cleanPlaceholder(json['description']),
       status: json['status'],
       views: json['views'] is num ? json['views'] : num.tryParse('${json['views']}') ?? 0,
       averageRating: json['averageRating'] is num ? json['averageRating'] : num.tryParse('${json['averageRating']}'),
