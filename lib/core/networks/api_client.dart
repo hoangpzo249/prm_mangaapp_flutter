@@ -35,6 +35,14 @@ class ApiClient {
     );
   }
 
+  Future<http.Response> put(String path, {Object? body, bool auth = false}) async {
+    return http.put(
+      Uri.parse('$baseUrl$path'),
+      headers: await _headers(auth: auth),
+      body: body == null ? null : jsonEncode(body),
+    );
+  }
+
   Future<http.Response> delete(String path, {bool auth = false}) async {
     return http.delete(Uri.parse('$baseUrl$path'), headers: await _headers(auth: auth));
   }
