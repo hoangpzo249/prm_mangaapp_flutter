@@ -10,7 +10,7 @@ import 'storage_service.dart';
 class ApiProvider {
   ApiProvider._();
 
-  static const String localIp = '192.168.1.141';
+  static const String localIp = '10.0.2.2';
   static const String baseUrl = 'http://$localIp:9999/api';
 
   static final ApiClient client = ApiClient(

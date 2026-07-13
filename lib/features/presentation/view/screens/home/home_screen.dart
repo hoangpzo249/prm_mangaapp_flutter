@@ -46,22 +46,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _checkUser() async {
-    final u = await _auth.getUserData();
-    if (mounted) setState(() => _user = u);
+    try {
+      final u = await _auth.getUserData();
+      if (mounted) setState(() => _user = u);
+    } catch (e) {
+      debugPrint('Lỗi checkUser: $e');
+    }
   }
 
   Future<void> _loadData() async {
     setState(() => _loading = true);
-    final results = await Future.wait([
-      _stories.fetchHotStories(),
-      _stories.fetchRandomStories(),
-    ]);
-    if (!mounted) return;
-    setState(() {
-      _hotStories = results[0];
-      _randomStories = results[1];
-      _loading = false;
-    });
+    try {
+      final results = await Future.wait([
+        _stories.fetchHotStories(),
+        _stories.fetchRandomStories(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _hotStories = results[0];
+          _randomStories = results[1];
+        });
+      }
+    } catch (e) {
+      debugPrint('Lỗi loadData: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
