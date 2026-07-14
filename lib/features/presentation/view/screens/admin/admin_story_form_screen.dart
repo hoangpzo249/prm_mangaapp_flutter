@@ -3,6 +3,8 @@ import 'package:ionicons/ionicons.dart';
 
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../data/repositories/admin_repository.dart';
+import '../../../../data/repositories/genre_repository.dart';
+import '../../../../domain/entities/genre.dart';
 import '../../../../domain/entities/story.dart';
 
 class AdminStoryFormScreen extends StatefulWidget {
@@ -15,6 +17,7 @@ class AdminStoryFormScreen extends StatefulWidget {
 
 class _AdminStoryFormScreenState extends State<AdminStoryFormScreen> {
   final _adminRepo = AdminRepository.instance;
+  final _genreRepo = GenreRepository.instance;
   final _formKey = GlobalKey<FormState>();
 
   late bool _isEditing;
@@ -23,9 +26,11 @@ class _AdminStoryFormScreenState extends State<AdminStoryFormScreen> {
   final _authorController = TextEditingController();
   final _thumbnailController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _genresController = TextEditingController();
 
   String _status = 'Ongoing';
+  List<Genre> _availableGenres = [];
+  final Set<String> _selectedGenreIds = <String>{};
+  bool _loadingGenres = true;
 
   bool _saving = false;
 
@@ -39,8 +44,23 @@ class _AdminStoryFormScreenState extends State<AdminStoryFormScreen> {
       _authorController.text = story.author ?? '';
       _thumbnailController.text = _stripProxy(story.thumbnail);
       _descriptionController.text = story.description ?? '';
-      _genresController.text = story.genres.join(', ');
+      _selectedGenreIds.addAll(story.genres.map((g) => g.id));
       _status = (story.status == 'Complete') ? 'Complete' : 'Ongoing';
+    }
+    _loadGenres();
+  }
+
+  Future<void> _loadGenres() async {
+    try {
+      final genres = await _genreRepo.fetchGenres();
+      if (!mounted) return;
+      setState(() {
+        _availableGenres = genres;
+        _loadingGenres = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingGenres = false);
     }
   }
 
@@ -56,16 +76,7 @@ class _AdminStoryFormScreenState extends State<AdminStoryFormScreen> {
     _authorController.dispose();
     _thumbnailController.dispose();
     _descriptionController.dispose();
-    _genresController.dispose();
     super.dispose();
-  }
-
-  List<String> _parseGenres(String raw) {
-    return raw
-        .split(',')
-        .map((g) => g.trim())
-        .where((g) => g.isNotEmpty)
-        .toList();
   }
 
   Future<void> _save() async {
@@ -86,7 +97,7 @@ class _AdminStoryFormScreenState extends State<AdminStoryFormScreen> {
         'description': _descriptionController.text.trim().isEmpty
             ? 'Đang cập nhật...'
             : _descriptionController.text.trim(),
-        'genres': _parseGenres(_genresController.text),
+        'genres': _selectedGenreIds.toList(),
         'status': _status,
       };
 
@@ -180,11 +191,7 @@ class _AdminStoryFormScreenState extends State<AdminStoryFormScreen> {
                 keyboardType: TextInputType.url,
               ),
               const SizedBox(height: 16),
-              _buildTextField(
-                controller: _genresController,
-                labelText: 'Thể loại (phân cách bằng dấu ,)',
-                icon: Ionicons.pricetags_outline,
-              ),
+              _buildGenrePicker(),
               const SizedBox(height: 16),
               _buildTextField(
                 controller: _descriptionController,
@@ -256,6 +263,86 @@ class _AdminStoryFormScreenState extends State<AdminStoryFormScreen> {
           icon: Icon(icon, color: AppColors.textSubtle, size: 20),
         ),
         validator: validator,
+      ),
+    );
+  }
+
+  Widget _buildGenrePicker() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(Ionicons.pricetags_outline,
+                  color: AppColors.textSubtle, size: 20),
+              SizedBox(width: 12),
+              Text(
+                'Thể loại',
+                style: TextStyle(
+                  color: AppColors.textSubtle,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_loadingGenres)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  color: AppColors.primary,
+                  strokeWidth: 2,
+                ),
+              ),
+            )
+          else if (_availableGenres.isEmpty)
+            const Text(
+              'Chưa có thể loại nào. Hãy tạo thể loại trước.',
+              style: TextStyle(color: AppColors.textSubtle, fontSize: 13),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _availableGenres.map((g) {
+                final selected = _selectedGenreIds.contains(g.id);
+                return FilterChip(
+                  label: Text(g.name),
+                  selected: selected,
+                  showCheckmark: false,
+                  onSelected: (val) {
+                    setState(() {
+                      if (val) {
+                        _selectedGenreIds.add(g.id);
+                      } else {
+                        _selectedGenreIds.remove(g.id);
+                      }
+                    });
+                  },
+                  backgroundColor: AppColors.surface,
+                  selectedColor: AppColors.primary,
+                  labelStyle: TextStyle(
+                    color: selected ? Colors.white : AppColors.textSubtle,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                  side: BorderSide(
+                    color: selected ? AppColors.primary : AppColors.border,
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
       ),
     );
   }

@@ -70,6 +70,7 @@ class _FeaturedSectionState extends State<FeaturedSection> {
   Widget build(BuildContext context) {
     final top = _active;
     final list = widget.randomStories.take(10).toList();
+    final activeId = top?.id ?? '';
 
     return Stack(
       children: [
@@ -77,8 +78,28 @@ class _FeaturedSectionState extends State<FeaturedSection> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (top?.thumbnail != null)
-                NetImage(url: top!.thumbnail, fit: BoxFit.cover, opacity: 0.4),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 900),
+                switchInCurve: Curves.easeInOutCubic,
+                switchOutCurve: Curves.easeInOutCubic,
+                transitionBuilder: (child, anim) =>
+                    FadeTransition(opacity: anim, child: child),
+                layoutBuilder: (current, previous) => Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ...previous,
+                    ?current,
+                  ],
+                ),
+                child: (top?.thumbnail != null)
+                    ? NetImage(
+                        key: ValueKey('hero-bg-$activeId'),
+                        url: top!.thumbnail,
+                        fit: BoxFit.cover,
+                        opacity: 0.4,
+                      )
+                    : const SizedBox.expand(key: ValueKey('hero-bg-empty')),
+              ),
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(

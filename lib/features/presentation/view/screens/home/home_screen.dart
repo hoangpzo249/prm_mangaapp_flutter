@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   AppUser? _user;
   double _headerOffset = 0;
 
-  double get _headerHeight => 60;
+  double get _headerHeight => 60 + MediaQuery.paddingOf(context).top;
 
   @override
   void initState() {

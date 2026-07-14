@@ -11,7 +11,7 @@ class ApiProvider {
   ApiProvider._();
 
   // static const String localIp = '192.168.1.141';
-  static const String baseUrl = 'http://localhost:9999/api';
+  static const String baseUrl = 'http://10.33.57.144:9999/api';
 
   static final ApiClient client = ApiClient(
     baseUrl: baseUrl,
