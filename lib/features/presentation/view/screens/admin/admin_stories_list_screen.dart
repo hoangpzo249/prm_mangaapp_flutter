@@ -122,8 +122,14 @@ class _AdminStoriesListScreenState extends State<AdminStoriesListScreen> {
     if (confirm != true) return;
 
     try {
-      await _adminRepo.deleteStory(story.id);
-      _snack('Đã ẩn truyện "${story.title}"');
+      final res = await _adminRepo.deleteStory(story.id);
+      final refund = res['refund'];
+      final users = refund is Map ? (refund['refundedUsers'] ?? 0) as int : 0;
+      final coins = refund is Map ? (refund['totalCoins'] ?? 0) as int : 0;
+      final suffix = users > 0
+          ? ' · Hoàn $coins xu cho $users user'
+          : '';
+      _snack('Đã ẩn truyện "${story.title}"$suffix');
       _loadStories();
     } catch (e) {
       _snack(
