@@ -146,16 +146,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 40),
+          GestureDetector(
+            onTap: () async {
+              await Navigator.pushNamed(context, AppRoutes.editProfile);
+              _load();
+            },
+            child: const Padding(
+              padding: EdgeInsets.all(5),
+              child: Icon(Ionicons.create_outline, size: 24, color: Colors.white),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _avatar() {
-    final displayName = _user?.fullName?.isNotEmpty == true
-        ? _user!.fullName!
-        : (_user?.username ?? 'U');
+    final displayName = _user?.fullName?.isNotEmpty == true ? _user!.fullName! : (_user?.username ?? 'U');
+    final avatarUrl = _user?.avatar;
+
     return Padding(
       padding: const EdgeInsets.only(top: 20, bottom: 20),
       child: Column(
@@ -168,13 +177,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: Text(
-              displayName[0].toUpperCase(),
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+            child: ClipOval(
+              child: avatarUrl != null && avatarUrl.isNotEmpty
+                  ? Image.network(
+                      avatarUrl,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Text(
+                        displayName[0].toUpperCase(),
+                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    )
+                  : Text(
+                      displayName[0].toUpperCase(),
+                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
             ),
           ),
           const SizedBox(height: 15),
@@ -292,19 +310,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          _menuItem(
-            Ionicons.bookmark_outline,
-            'Library (Following)',
-            () => Navigator.pushNamed(context, AppRoutes.bookmarks),
-            border: true,
-          ),
-          _menuItem(Ionicons.time_outline, 'Reading history', () {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              AppRoutes.home,
-              (r) => false,
-              arguments: {'tab': 2},
-            );
+          _menuItem(Ionicons.person_outline, 'Cập nhật thông tin', () async {
+            await Navigator.pushNamed(context, AppRoutes.editProfile);
+            _load();
+          }, border: true),
+          _menuItem(Ionicons.bookmark_outline, 'Tủ truyện (Đang theo dõi)', () => Navigator.pushNamed(context, AppRoutes.bookmarks), border: true),
+          _menuItem(Ionicons.time_outline, 'Lịch sử đọc', () {
+            Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (r) => false, arguments: {'tab': 2});
+          }, border: true),
+          _menuItem(Ionicons.lock_closed_outline, 'Đổi mật khẩu', () {
+            Navigator.pushNamed(context, AppRoutes.changePassword);
           }),
         ],
       ),

@@ -19,6 +19,9 @@ import '../../features/presentation/view/screens/main_tabs.dart';
 import '../../features/presentation/view/screens/notifications/notifications_screen.dart';
 import '../../features/presentation/view/screens/payment/payment_screen.dart';
 import '../../features/presentation/view/screens/profile/profile_screen.dart';
+import '../../features/presentation/view/screens/profile/edit_profile_screen.dart';
+import '../../features/presentation/view/screens/profile/change_password_screen.dart';
+import '../../features/presentation/view/screens/auth/forgot_password_screen.dart';
 import '../../features/presentation/view/screens/story/story_detail_screen.dart';
 import '../../features/presentation/view/screens/payment/transaction_history_screen.dart';
 import '../../features/presentation/view/screens/payment/vip_history_screen.dart';
@@ -47,6 +50,9 @@ class AppRoutes {
   static const String adminStoryForm = '/admin-story-form';
   static const String adminChapters = '/admin-chapters';
   static const String adminChapterForm = '/admin-chapter-form';
+  static const forgotPassword = '/forgotPassword';
+  static const editProfile = '/editProfile';
+  static const changePassword = '/changePassword';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final Uri uri = Uri.parse(settings.name ?? home);
@@ -157,6 +163,12 @@ class AppRoutes {
 
         return _fade(const _RouteNotFoundScreen(), settings);
 
+      case AppRoutes.forgotPassword:
+        return _fade(const ForgotPasswordScreen(), settings);
+      case AppRoutes.editProfile:
+        return _fade(const EditProfileScreen(), settings);
+      case AppRoutes.changePassword:
+        return _fade(const ChangePasswordScreen(), settings);
       default:
         return _fade(const _RouteNotFoundScreen(), settings);
     }

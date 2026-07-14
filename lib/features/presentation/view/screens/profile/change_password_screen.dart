@@ -1,57 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
-
-import '../../../../../app/routers/app_router.dart';
+ 
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../data/repositories/auth_repository.dart';
-import '../../widgets/logo.dart';
-
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
-
+ 
+class ChangePasswordScreen extends StatefulWidget {
+  const ChangePasswordScreen({super.key});
+ 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
 }
-
-class _RegisterScreenState extends State<RegisterScreen> {
+ 
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _auth = AuthRepository.instance;
-  final _fullName = TextEditingController();
-  final _email = TextEditingController();
-  final _username = TextEditingController();
-  final _password = TextEditingController();
-  final _confirm = TextEditingController();
-  final _otp = TextEditingController();
+  final _oldPassword = TextEditingController();
+  final _newPassword = TextEditingController();
+  final _confirmPassword = TextEditingController();
   bool _loading = false;
-  bool _isOtpSent = false;
-
-  Future<void> _register() async {
-    if (_fullName.text.isEmpty ||
-        _email.text.isEmpty ||
-        _username.text.isEmpty ||
-        _password.text.isEmpty ||
-        _confirm.text.isEmpty) {
-      _alert('Error', 'Please fill in all fields.');
+ 
+  Future<void> _submit() async {
+    if (_oldPassword.text.isEmpty ||
+        _newPassword.text.isEmpty ||
+        _confirmPassword.text.isEmpty) {
+      _alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin.');
       return;
     }
-    if (_password.text != _confirm.text) {
-      _alert('Error', 'Passwords do not match.');
+    if (_newPassword.text != _confirmPassword.text) {
+      _alert('Lỗi', 'Mật khẩu mới nhập lại không khớp.');
       return;
     }
+ 
     setState(() => _loading = true);
     try {
-      await _auth.register(_username.text, _email.text, _password.text, _fullName.text);
+      await _auth.changePassword(_oldPassword.text, _newPassword.text);
       if (!mounted) return;
-      _alert('Success', 'Registration successful! Please log in.',
-          onOk: () =>
-              Navigator.pushReplacementNamed(context, AppRoutes.login));
+      _alert('Thành công', 'Đổi mật khẩu thành công.', onOk: () {
+        Navigator.pop(context);
+      });
     } catch (e) {
-      _alert(
-          'Registration failed', e.toString().replaceFirst('Exception: ', ''));
+      _alert('Đổi mật khẩu thất bại',
+          e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
-
+ 
   void _alert(String title, String msg, {VoidCallback? onOk}) {
     showDialog(
       context: context,
@@ -72,18 +65,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-
+ 
   @override
   void dispose() {
-    _fullName.dispose();
-    _email.dispose();
-    _username.dispose();
-    _password.dispose();
-    _confirm.dispose();
-    _otp.dispose();
+    _oldPassword.dispose();
+    _newPassword.dispose();
+    _confirmPassword.dispose();
     super.dispose();
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,26 +86,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.08),
-                    const Logo(fontSize: 28, align: TextAlign.center),
-                    const SizedBox(height: 40),
-                    _input(_fullName, 'Full name', Ionicons.person_circle_outline),
+                    const SizedBox(height: 10),
+                    _input(_oldPassword, 'Mật khẩu hiện tại',
+                        Ionicons.lock_closed_outline),
                     const SizedBox(height: 15),
-                    _input(_email, 'Email address', Ionicons.mail_outline),
+                    _input(_newPassword, 'Mật khẩu mới',
+                        Ionicons.key_outline),
                     const SizedBox(height: 15),
-                    _input(_username, 'Username', Ionicons.person_outline),
-                    const SizedBox(height: 15),
-                    _input(_password, 'Password', Ionicons.lock_closed_outline,
-                        obscure: true),
-                    const SizedBox(height: 15),
-                    _input(_confirm, 'Confirm password',
-                        Ionicons.lock_closed_outline,
-                        obscure: true),
+                    _input(_confirmPassword, 'Nhập lại mật khẩu mới',
+                        Ionicons.key_outline),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Mật khẩu mới tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.',
+                      style: TextStyle(color: AppColors.textDim, fontSize: 12),
+                    ),
                     const SizedBox(height: 25),
                     _button(),
-                    const SizedBox(height: 25),
-                    _footer(),
                   ],
                 ),
               ),
@@ -125,7 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-
+ 
   Widget _header() {
     return Container(
       padding: const EdgeInsets.all(15),
@@ -135,14 +123,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.pushNamedAndRemoveUntil(
-                context, AppRoutes.home, (r) => false),
+            onTap: () => Navigator.maybePop(context),
             child: const Padding(
               padding: EdgeInsets.only(right: 15),
               child: Icon(Ionicons.arrow_back, size: 24, color: Colors.white),
             ),
           ),
-          const Text('Create account',
+          const Text('Đổi mật khẩu',
               style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -151,9 +138,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-
+ 
   Widget _input(TextEditingController c, String hint, IconData icon,
-      {bool obscure = false}) {
+      {bool obscure = true}) {
     return Container(
       height: 55,
       padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -171,6 +158,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               obscureText: obscure,
               autocorrect: false,
               enableSuggestions: !obscure,
+              textCapitalization: TextCapitalization.none,
               cursorColor: AppColors.primary,
               style: const TextStyle(color: Colors.white, fontSize: 16),
               decoration: InputDecoration(
@@ -186,14 +174,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-
+ 
   Widget _button() {
     return GestureDetector(
-      onTap: _loading ? null : _register,
+      onTap: _loading ? null : _submit,
       child: Container(
         height: 55,
         decoration: BoxDecoration(
-          color: AppColors.logo,
+          color: AppColors.primary,
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.center,
@@ -203,30 +191,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 height: 22,
                 child: CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2))
-            : const Text('Sign up',
+            : const Text('Xác nhận đổi mật khẩu',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold)),
       ),
-    );
-  }
-
-  Widget _footer() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text('Already have an account? ',
-            style: TextStyle(color: AppColors.textSubtle, fontSize: 14)),
-        GestureDetector(
-          onTap: () => Navigator.pushNamed(context, AppRoutes.login),
-          child: const Text('Sign in',
-              style: TextStyle(
-                  color: AppColors.logo,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold)),
-        ),
-      ],
     );
   }
 }
