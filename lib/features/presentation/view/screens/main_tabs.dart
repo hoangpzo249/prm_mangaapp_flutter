@@ -7,9 +7,9 @@ import 'history/history_screen.dart';
 import 'home/home_screen.dart';
 
 /// Lets descendants request a tab switch, optionally passing a sort mode
-/// to the Explore tab.
+/// or genre filter to the Explore tab.
 class TabsScope extends InheritedWidget {
-  final void Function(int index, {String? sort}) goToTab;
+  final void Function(int index, {String? sort, List<String>? genreIds}) goToTab;
   const TabsScope({super.key, required this.goToTab, required super.child});
 
   static TabsScope of(BuildContext context) =>
@@ -22,7 +22,13 @@ class TabsScope extends InheritedWidget {
 class MainTabs extends StatefulWidget {
   final int initialIndex;
   final String? exploreSort;
-  const MainTabs({super.key, this.initialIndex = 0, this.exploreSort});
+  final List<String>? exploreGenreIds;
+  const MainTabs({
+    super.key,
+    this.initialIndex = 0,
+    this.exploreSort,
+    this.exploreGenreIds,
+  });
 
   @override
   State<MainTabs> createState() => _MainTabsState();
@@ -31,6 +37,7 @@ class MainTabs extends StatefulWidget {
 class _MainTabsState extends State<MainTabs> {
   late int _index = widget.initialIndex;
   late String? _exploreSort = widget.exploreSort;
+  late List<String>? _exploreGenreIds = widget.exploreGenreIds;
   final ValueNotifier<int> _historyRefresh = ValueNotifier<int>(0);
 
   @override
@@ -39,10 +46,11 @@ class _MainTabsState extends State<MainTabs> {
     super.dispose();
   }
 
-  void _goToTab(int index, {String? sort}) {
+  void _goToTab(int index, {String? sort, List<String>? genreIds}) {
     setState(() {
       _index = index;
       if (sort != null) _exploreSort = sort;
+      if (genreIds != null) _exploreGenreIds = genreIds;
     });
     if (index == 2) _historyRefresh.value++;
   }
@@ -51,7 +59,10 @@ class _MainTabsState extends State<MainTabs> {
   Widget build(BuildContext context) {
     final pages = [
       const HomeScreen(),
-      ExploreScreen(initialSort: _exploreSort),
+      ExploreScreen(
+        initialSort: _exploreSort,
+        initialGenreIds: _exploreGenreIds,
+      ),
       HistoryScreen(refreshTrigger: _historyRefresh),
     ];
 

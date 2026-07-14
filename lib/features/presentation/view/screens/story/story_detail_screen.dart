@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 
@@ -42,26 +44,40 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   }
 
   Future<void> _load() async {
-    final story = await _stories.fetchStoryById(widget.storyId);
-    final chapters = await _chapters.fetchChaptersByStoryId(widget.storyId);
-    if (chapters.isNotEmpty) {
-      chapters.sort((a, b) => a.chapterNumber.compareTo(b.chapterNumber));
-      _firstChapterId = chapters.first.id;
-    }
-    _bookmarked = await _bookmarks.checkBookmark(widget.storyId);
+    final storyF = _stories.fetchStoryById(widget.storyId);
 
-    final entry = await _history.getStoryHistory(widget.storyId);
-    if (entry != null && entry.chapterId != null) {
-      _continueChapterId = entry.chapterId;
-      _continueChapterNumber = entry.chapterNumber;
-    }
-
-    if (mounted) {
+    // Render header/info ngay khi story về — không đợi 3 request phụ.
+    try {
+      final story = await storyF;
+      if (!mounted) return;
       setState(() {
         _story = story;
         _loading = false;
       });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+      return;
     }
+
+    // 3 request phụ chạy song song, cập nhật khi từng cái xong.
+    unawaited(_chapters.fetchChaptersByStoryId(widget.storyId).then((chapters) {
+      if (!mounted || chapters.isEmpty) return;
+      chapters.sort((a, b) => a.chapterNumber.compareTo(b.chapterNumber));
+      setState(() => _firstChapterId = chapters.first.id);
+    }).catchError((_) {}));
+
+    unawaited(_bookmarks.checkBookmark(widget.storyId).then((b) {
+      if (!mounted) return;
+      setState(() => _bookmarked = b);
+    }).catchError((_) {}));
+
+    unawaited(_history.getStoryHistory(widget.storyId).then((entry) {
+      if (!mounted || entry == null || entry.chapterId == null) return;
+      setState(() {
+        _continueChapterId = entry.chapterId;
+        _continueChapterNumber = entry.chapterNumber;
+      });
+    }).catchError((_) {}));
   }
 
   Future<void> _toggleBookmark() async {

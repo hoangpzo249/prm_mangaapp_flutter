@@ -112,14 +112,16 @@ class AdminRepository {
     }
   }
 
-  /// Soft delete: đánh dấu ẩn truyện (backend chỉ set isHidden=true)
-  Future<void> deleteStory(String id) async {
+  /// Soft delete: đánh dấu ẩn truyện (backend chỉ set isHidden=true).
+  /// Trả về body chứa `refund: { refundedUsers, coinsPerUser, totalCoins }`
+  /// khi có VIP chapter bị ẩn cùng truyện.
+  Future<Map<String, dynamic>> deleteStory(String id) async {
     final res = await _api.delete('/stories/$id', auth: true);
+    final body = ApiClient.decodeMap(res);
     if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw Exception(
-        ApiClient.decodeMap(res)['message'] ?? 'Hide story failed',
-      );
+      throw Exception(body['message'] ?? 'Hide story failed');
     }
+    return body;
   }
 
   Future<void> restoreStory(String id) async {
@@ -168,14 +170,15 @@ class AdminRepository {
     }
   }
 
-  /// Soft delete: đánh dấu ẩn chapter (backend chỉ set isHidden=true)
-  Future<void> deleteChapter(String id) async {
+  /// Soft delete: đánh dấu ẩn chapter (backend chỉ set isHidden=true).
+  /// Trả về body chứa `refund` khi ẩn chapter VIP.
+  Future<Map<String, dynamic>> deleteChapter(String id) async {
     final res = await _api.delete('/chapters/$id', auth: true);
+    final body = ApiClient.decodeMap(res);
     if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw Exception(
-        ApiClient.decodeMap(res)['message'] ?? 'Hide chapter failed',
-      );
+      throw Exception(body['message'] ?? 'Hide chapter failed');
     }
+    return body;
   }
 
   Future<void> restoreChapter(String id) async {

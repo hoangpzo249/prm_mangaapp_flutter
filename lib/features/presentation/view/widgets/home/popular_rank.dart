@@ -23,7 +23,9 @@ class PopularRank extends StatelessWidget {
         id: s.id,
         title: s.title,
         views: s.views != 0 ? s.views : rng.nextInt(5000000) + 10000,
-        genres: s.genres.isNotEmpty ? s.genres.join(', ') : 'ACTION, ADVENTURE',
+        genres: s.genres.isNotEmpty
+            ? s.genres.map((g) => g.name).join(', ')
+            : 'ACTION, ADVENTURE',
         rank: e.key + 1,
         thumbnail: s.thumbnail,
       );

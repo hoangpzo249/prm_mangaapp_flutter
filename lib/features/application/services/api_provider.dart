@@ -30,7 +30,7 @@ import 'storage_service.dart';
 class ApiProvider {
   ApiProvider._();
  
-  static const String _host = kIsWeb ? 'localhost' : '10.0.2.2';
+  static const String _host = kIsWeb ? 'localhost' : '10.33.57.144';
   static const String baseUrl = 'http://$_host:9999/api';
  
   static final ApiClient client = ApiClient(

@@ -126,8 +126,14 @@ class _AdminChaptersListScreenState extends State<AdminChaptersListScreen> {
     if (confirm != true) return;
 
     try {
-      await _adminRepo.deleteChapter(chapter.id);
-      _snack('Đã ẩn Chương ${chapter.chapterNumber}');
+      final res = await _adminRepo.deleteChapter(chapter.id);
+      final refund = res['refund'];
+      final users = refund is Map ? (refund['refundedUsers'] ?? 0) as int : 0;
+      final coins = refund is Map ? (refund['totalCoins'] ?? 0) as int : 0;
+      final suffix = users > 0
+          ? ' · Hoàn $coins xu cho $users user'
+          : '';
+      _snack('Đã ẩn Chương ${chapter.chapterNumber}$suffix');
       _loadChapters();
     } catch (e) {
       _snack(
