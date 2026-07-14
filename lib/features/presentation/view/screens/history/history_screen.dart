@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 
@@ -11,7 +12,8 @@ import '../../widgets/net_image.dart';
 import '../main_tabs.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+  final ValueListenable<int>? refreshTrigger;
+  const HistoryScreen({super.key, this.refreshTrigger});
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -28,20 +30,65 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
     super.initState();
+    widget.refreshTrigger?.addListener(_onRefreshTrigger);
     _load();
   }
 
+  @override
+  void dispose() {
+    widget.refreshTrigger?.removeListener(_onRefreshTrigger);
+    super.dispose();
+  }
+
+  void _onRefreshTrigger() {
+    if (mounted) _load();
+  }
+
   Future<void> _load() async {
-    setState(() => _loading = true);
+    if (!_loading) setState(() => _loading = true);
     final token = await _storage.getToken();
+    List<HistoryItem> items;
     if (token != null) {
       _loggedIn = true;
-      _items = await _history.getReadingHistory();
+      items = await _history.getReadingHistory();
     } else {
       _loggedIn = false;
-      _items = await _storage.getLocalHistory();
+      items = await _storage.getLocalHistory();
     }
-    if (mounted) setState(() => _loading = false);
+    if (mounted) {
+      setState(() {
+        _items = items;
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _confirmRemove(HistoryItem item) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: const Text('Remove from history?',
+            style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Remove "${item.storyTitle ?? 'this story'}" from your reading history?',
+          style: const TextStyle(color: AppColors.textLight),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textSubtle)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove',
+                style: TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await _remove(item.storyId);
   }
 
   Future<void> _remove(String storyId) async {
@@ -49,9 +96,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
         () => _items = _items.where((h) => h.storyId != storyId).toList());
     if (_loggedIn) {
       await _history.deleteReadingHistory(storyId);
-    } else {
-      await _storage.setLocalHistory(_items);
     }
+    final local = await _storage.getLocalHistory();
+    await _storage.setLocalHistory(
+        local.where((h) => h.storyId != storyId).toList());
   }
 
   @override
@@ -68,14 +116,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ? const Center(
                       child: CircularProgressIndicator(
                           color: AppColors.primary))
-                  : _items.isEmpty
-                      ? _empty()
-                      : ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(15, 15, 15, 30),
-                          itemCount: _items.length,
-                          itemBuilder: (_, i) => _card(_items[i]),
-                        ),
+                  : RefreshIndicator(
+                      color: AppColors.primary,
+                      backgroundColor: AppColors.card,
+                      onRefresh: _load,
+                      child: _items.isEmpty
+                          ? ListView(
+                              physics:
+                                  const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.6,
+                                  child: _empty(),
+                                ),
+                              ],
+                            )
+                          : ListView.builder(
+                              physics:
+                                  const AlwaysScrollableScrollPhysics(),
+                              padding:
+                                  const EdgeInsets.fromLTRB(15, 15, 15, 30),
+                              itemCount: _items.length,
+                              itemBuilder: (_, i) => _card(_items[i]),
+                            ),
+                    ),
             ),
           ],
         ),
@@ -163,7 +228,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
             ),
             GestureDetector(
-              onTap: () => _remove(item.storyId),
+              onTap: () => _confirmRemove(item),
               child: const Padding(
                 padding: EdgeInsets.all(10),
                 child: Icon(Ionicons.trash_outline,

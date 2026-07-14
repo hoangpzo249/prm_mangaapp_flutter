@@ -26,7 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _load() async {
-    // 1. Lấy tạm từ local storage cho nhanh
     final localData = await _auth.getUserData();
     if (!mounted) return;
     if (localData == null) {
@@ -38,7 +37,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _loading = false;
     });
 
-    // 2. Fetch data mới nhất từ Backend (Cập nhật số dư ví, ngày VIP...)
     try {
       final latest = await _auth.fetchMe();
       if (mounted) setState(() => _user = latest);
@@ -50,22 +48,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text('Xác nhận', style: TextStyle(color: Colors.white)),
-        content: const Text('Bạn có chắc chắn muốn đăng xuất?', style: TextStyle(color: AppColors.textLight)),
+        title: const Text('Confirm', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Are you sure you want to sign out?',
+          style: TextStyle(color: AppColors.textLight),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy', style: TextStyle(color: AppColors.textSubtle)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSubtle),
+            ),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
               await _auth.logout();
               if (mounted) {
-                Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (r) => false);
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.home,
+                  (r) => false,
+                );
               }
             },
-            child: const Text('Đăng xuất', style: TextStyle(color: AppColors.danger)),
+            child: const Text(
+              'Sign out',
+              style: TextStyle(color: AppColors.danger),
+            ),
           ),
         ],
       ),
@@ -77,7 +88,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_loading) {
       return const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
@@ -123,9 +136,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const Expanded(
-            child: Text('Hồ sơ cá nhân',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            child: Text(
+              'Profile',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           GestureDetector(
             onTap: () async {
@@ -153,7 +172,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             width: 80,
             height: 80,
-            decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: AppColors.primary,
+              shape: BoxShape.circle,
+            ),
             alignment: Alignment.center,
             child: ClipOval(
               child: avatarUrl != null && avatarUrl.isNotEmpty
@@ -174,8 +196,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 15),
-          Text(displayName, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-          
+          Text(
+            displayName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
           if (_user?.isVip == true) ...[
             const SizedBox(height: 8),
             Container(
@@ -190,10 +219,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   const Icon(Ionicons.star, size: 12, color: AppColors.star),
                   Text(
-                    _user?.vipUntil != null 
-                        ? ' VIP (Đến ${DateFormat('dd/MM/yyyy').format(_user!.vipUntil!)})' 
+                    _user?.vipUntil != null
+                        ? ' VIP (Until ${DateFormat('dd/MM/yyyy').format(_user!.vipUntil!)})'
                         : ' VIP',
-                    style: const TextStyle(color: AppColors.star, fontWeight: FontWeight.bold, fontSize: 12),
+                    style: const TextStyle(
+                      color: AppColors.star,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -227,11 +260,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Số dư Xu', style: TextStyle(color: AppColors.textLight, fontSize: 14)),
+              const Text(
+                'Coin balance',
+                style: TextStyle(color: AppColors.textLight, fontSize: 14),
+              ),
               const SizedBox(height: 4),
               Text(
-                '${NumberFormat('#,###').format(balance)} Xu',
-                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                '${NumberFormat('#,###').format(balance)} Coins',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -239,13 +279,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ElevatedButton(
             onPressed: () async {
               await Navigator.pushNamed(context, AppRoutes.payment);
-              _load(); // Load lại data khi đi từ payment về (để cập nhật số dư)
+              _load();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
             ),
-            child: const Text('Nạp xu / Mua VIP', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Top up / Buy VIP',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -278,21 +326,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _menuItem(IconData icon, String label, VoidCallback onTap, {bool border = false}) {
+  Widget _menuItem(
+    IconData icon,
+    String label,
+    VoidCallback onTap, {
+    bool border = false,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          border: border ? const Border(bottom: BorderSide(color: AppColors.border, width: 1)) : null,
+          border: border
+              ? const Border(
+                  bottom: BorderSide(color: AppColors.border, width: 1),
+                )
+              : null,
         ),
         child: Row(
           children: [
             Icon(icon, size: 20, color: Colors.white),
             const SizedBox(width: 15),
-            Text(label, style: const TextStyle(color: Colors.white, fontSize: 16)),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
             const Spacer(),
-            const Icon(Ionicons.chevron_forward, size: 20, color: AppColors.textDim),
+            const Icon(
+              Ionicons.chevron_forward,
+              size: 20,
+              color: AppColors.textDim,
+            ),
           ],
         ),
       ),
@@ -315,7 +379,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Icon(Ionicons.log_out_outline, size: 20, color: AppColors.danger),
             SizedBox(width: 10),
-            Text('Đăng xuất', style: TextStyle(color: AppColors.danger, fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              'Sign out',
+              style: TextStyle(
+                color: AppColors.danger,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),

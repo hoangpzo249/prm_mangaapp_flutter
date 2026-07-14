@@ -38,4 +38,3 @@ class ApiProvider {
     tokenProvider: StorageService.instance.getToken,
   );
 }
- 

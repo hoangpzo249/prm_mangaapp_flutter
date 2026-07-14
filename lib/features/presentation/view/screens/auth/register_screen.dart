@@ -30,23 +30,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _username.text.isEmpty ||
         _password.text.isEmpty ||
         _confirm.text.isEmpty) {
-      _alert('Lỗi', 'Vui lòng điền đầy đủ thông tin.');
+      _alert('Error', 'Please fill in all fields.');
       return;
     }
     if (_password.text != _confirm.text) {
-      _alert('Lỗi', 'Mật khẩu không khớp.');
+      _alert('Error', 'Passwords do not match.');
       return;
     }
     setState(() => _loading = true);
     try {
       await _auth.register(_username.text, _email.text, _password.text, _fullName.text);
       if (!mounted) return;
-      _alert('Thành công', 'Đăng ký thành công! Vui lòng đăng nhập.',
+      _alert('Success', 'Registration successful! Please log in.',
           onOk: () =>
               Navigator.pushReplacementNamed(context, AppRoutes.login));
     } catch (e) {
       _alert(
-          'Đăng ký thất bại', e.toString().replaceFirst('Exception: ', ''));
+          'Registration failed', e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -100,16 +100,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     SizedBox(height: MediaQuery.of(context).size.height * 0.08),
                     const Logo(fontSize: 28, align: TextAlign.center),
                     const SizedBox(height: 40),
-                    _input(_fullName, 'Họ và tên', Ionicons.person_circle_outline),
+                    _input(_fullName, 'Full name', Ionicons.person_circle_outline),
                     const SizedBox(height: 15),
-                    _input(_email, 'Địa chỉ Email', Ionicons.mail_outline),
+                    _input(_email, 'Email address', Ionicons.mail_outline),
                     const SizedBox(height: 15),
-                    _input(_username, 'Tên đăng nhập', Ionicons.person_outline),
+                    _input(_username, 'Username', Ionicons.person_outline),
                     const SizedBox(height: 15),
-                    _input(_password, 'Mật khẩu', Ionicons.lock_closed_outline,
+                    _input(_password, 'Password', Ionicons.lock_closed_outline,
                         obscure: true),
                     const SizedBox(height: 15),
-                    _input(_confirm, 'Xác nhận mật khẩu',
+                    _input(_confirm, 'Confirm password',
                         Ionicons.lock_closed_outline,
                         obscure: true),
                     const SizedBox(height: 25),
@@ -142,7 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Icon(Ionicons.arrow_back, size: 24, color: Colors.white),
             ),
           ),
-          const Text('Đăng ký tài khoản',
+          const Text('Create account',
               style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -203,7 +203,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 height: 22,
                 child: CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2))
-            : const Text('Đăng ký',
+            : const Text('Sign up',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -216,11 +216,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text('Đã có tài khoản? ',
+        const Text('Already have an account? ',
             style: TextStyle(color: AppColors.textSubtle, fontSize: 14)),
         GestureDetector(
           onTap: () => Navigator.pushNamed(context, AppRoutes.login),
-          child: const Text('Đăng nhập',
+          child: const Text('Sign in',
               style: TextStyle(
                   color: AppColors.logo,
                   fontSize: 14,

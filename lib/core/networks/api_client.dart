@@ -59,7 +59,10 @@ class ApiClient {
 
   /// Decode JSON body, throwing [ApiException] on non-2xx status.
   static Map<String, dynamic> decodeMap(http.Response res) {
-    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    final dynamic decoded = res.body.isEmpty ? <String, dynamic>{} : jsonDecode(res.body);
+    final data = decoded is Map<String, dynamic>
+        ? decoded
+        : <String, dynamic>{'data': decoded};
     if (res.statusCode < 200 || res.statusCode >= 300) {
       throw ApiException(
         (data['message'] ?? 'Request failed').toString(),
@@ -70,7 +73,20 @@ class ApiClient {
   }
 
   static List<dynamic> decodeList(http.Response res) {
-    if (res.statusCode != 200) throw ApiException('Request failed', status: res.statusCode);
-    return jsonDecode(res.body) as List;
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      try {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        throw ApiException(
+          (data['message'] ?? 'Request failed').toString(),
+          status: res.statusCode,
+        );
+      } catch (error) {
+        if (error is ApiException) rethrow;
+        throw ApiException('Request failed', status: res.statusCode);
+      }
+    }
+    final dynamic decoded = res.body.isEmpty ? <dynamic>[] : jsonDecode(res.body);
+    if (decoded is List<dynamic>) return decoded;
+    throw ApiException('Invalid list response', status: res.statusCode);
   }
 }

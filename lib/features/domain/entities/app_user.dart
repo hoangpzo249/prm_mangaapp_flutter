@@ -6,6 +6,7 @@ class AppUser {
   final String? role;
   final String? avatar;
   final bool isVip;
+  final bool isBanned;
   final DateTime? vipUntil;
   final Wallet? wallet;
 
@@ -17,21 +18,27 @@ class AppUser {
     this.role,
     this.avatar,
     this.isVip = false,
+    this.isBanned = false,
     this.vipUntil,
     this.wallet,
   });
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
-        id: json['_id']?.toString(),
-        username: (json['username'] ?? '').toString(),
-        email: json['email']?.toString(),
-        fullName: json['fullName']?.toString(),
-        role: json['role']?.toString(),
+    id: (json['_id'] ?? json['id'])?.toString(),
+    username: (json['username'] ?? '').toString(),
+    email: json['email']?.toString(),
+    fullName: json['fullName']?.toString(),
+    role: json['role']?.toString(),
         avatar: json['avatar']?.toString(),
-        isVip: json['isVip'] == true,
-        vipUntil: json['vipUntil'] != null ? DateTime.tryParse(json['vipUntil']) : null,
-        wallet: json['wallet'] != null ? Wallet.fromJson(json['wallet']) : null,
-      );
+    isVip: json['isVip'] == true,
+    isBanned: json['isBanned'] == true,
+    vipUntil: json['vipUntil'] != null
+        ? DateTime.tryParse(json['vipUntil'].toString())
+        : null,
+    wallet: json['wallet'] is Map<String, dynamic>
+        ? Wallet.fromJson(json['wallet'])
+        : null,
+  );
 
   Map<String, dynamic> toJson() => {
         '_id': id,
@@ -39,28 +46,28 @@ class AppUser {
         'email': email,
         'fullName': fullName,
         'role': role,
-        'avatar': avatar,
         'isVip': isVip,
         'vipUntil': vipUntil?.toIso8601String(),
         'wallet': wallet?.toJson(),
       };
 
   AppUser copyWith({
+    String? id,
+    String? username,
     String? email,
-    String? fullName,
-    String? avatar,
     bool? isVip,
+    bool? isBanned,
     DateTime? vipUntil,
     Wallet? wallet,
   }) =>
       AppUser(
-        id: id,
-        username: username,
+        id: id ?? this.id,
+        username: username ?? this.username,
         email: email ?? this.email,
         fullName: fullName ?? this.fullName,
         role: role ?? this.role,
-        avatar: avatar ?? this.avatar,
         isVip: isVip ?? this.isVip,
+        isBanned: isBanned ?? this.isBanned,
         vipUntil: vipUntil ?? this.vipUntil,
         wallet: wallet ?? this.wallet,
       );
@@ -73,12 +80,9 @@ class Wallet {
   Wallet({this.balance = 0, this.isLocked = false});
 
   factory Wallet.fromJson(Map<String, dynamic> json) => Wallet(
-        balance: json['balance'] is num ? json['balance'] : 0,
-        isLocked: json['isLocked'] == true,
-      );
+    balance: json['balance'] is num ? json['balance'] : 0,
+    isLocked: json['isLocked'] == true,
+  );
 
-  Map<String, dynamic> toJson() => {
-        'balance': balance,
-        'isLocked': isLocked,
-      };
+  Map<String, dynamic> toJson() => {'balance': balance, 'isLocked': isLocked};
 }

@@ -26,9 +26,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     setState(() => _loading = true);
     try {
-      await _auth.login(_username.text, _password.text);
+      final user = await _auth.login(_username.text, _password.text);
       if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (r) => false);
+      if (user.role == 'admin') {
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.adminDashboard, (r) => false);
+      } else {
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (r) => false);
+      }
     } catch (e) {
       _alert('Login Failed', e.toString().replaceFirst('Exception: ', ''));
     } finally {

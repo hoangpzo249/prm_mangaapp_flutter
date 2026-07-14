@@ -19,11 +19,11 @@ class _StoryInfoState extends State<StoryInfo> {
   Widget build(BuildContext context) {
     final desc = widget.story.description?.isNotEmpty == true
         ? widget.story.description!
-        : 'Chưa có tóm tắt cho truyện này.';
+        : 'No summary available for this story yet.';
 
-    final genres = widget.story.genres.isNotEmpty 
-        ? widget.story.genres 
-        : ['Chưa cập nhật'];
+    final genres = widget.story.genres.isNotEmpty
+        ? widget.story.genres
+        : ['Not updated'];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -33,7 +33,7 @@ class _StoryInfoState extends State<StoryInfo> {
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Tóm tắt',
+              Text('Summary',
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -59,7 +59,7 @@ class _StoryInfoState extends State<StoryInfo> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(_expanded ? 'Thu gọn' : 'Đọc thêm',
+                  Text(_expanded ? 'Show less' : 'Read more',
                       style: const TextStyle(
                           color: AppColors.primary,
                           fontSize: 14,
@@ -72,7 +72,7 @@ class _StoryInfoState extends State<StoryInfo> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text('Thể loại',
+          const Text('Genres',
               style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,

@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   AppUser? _user;
   double _headerOffset = 0;
 
-  double get _headerHeight => 90;
+  double get _headerHeight => 60;
 
   @override
   void initState() {

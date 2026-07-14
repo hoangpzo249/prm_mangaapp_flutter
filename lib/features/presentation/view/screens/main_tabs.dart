@@ -31,12 +31,20 @@ class MainTabs extends StatefulWidget {
 class _MainTabsState extends State<MainTabs> {
   late int _index = widget.initialIndex;
   late String? _exploreSort = widget.exploreSort;
+  final ValueNotifier<int> _historyRefresh = ValueNotifier<int>(0);
+
+  @override
+  void dispose() {
+    _historyRefresh.dispose();
+    super.dispose();
+  }
 
   void _goToTab(int index, {String? sort}) {
     setState(() {
       _index = index;
       if (sort != null) _exploreSort = sort;
     });
+    if (index == 2) _historyRefresh.value++;
   }
 
   @override
@@ -44,7 +52,7 @@ class _MainTabsState extends State<MainTabs> {
     final pages = [
       const HomeScreen(),
       ExploreScreen(initialSort: _exploreSort),
-      const HistoryScreen(),
+      HistoryScreen(refreshTrigger: _historyRefresh),
     ];
 
     return TabsScope(

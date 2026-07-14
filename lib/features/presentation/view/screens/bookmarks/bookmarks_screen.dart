@@ -4,6 +4,7 @@ import 'package:ionicons/ionicons.dart';
 import '../../../../../app/routers/app_router.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/formatters.dart';
+import '../../../../application/services/storage_service.dart';
 import '../../../../data/repositories/bookmark_repository.dart';
 import '../../widgets/net_image.dart';
 
@@ -16,8 +17,10 @@ class BookmarksScreen extends StatefulWidget {
 
 class _BookmarksScreenState extends State<BookmarksScreen> {
   final _bookmarks = BookmarkRepository.instance;
+  final _storage = StorageService.instance;
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
+  bool _loggedIn = false;
 
   @override
   void initState() {
@@ -26,13 +29,24 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
   }
 
   Future<void> _load() async {
-    final data = await _bookmarks.getBookmarks();
+    final token = await _storage.getToken();
+    final loggedIn = token != null;
+    final data = loggedIn ? await _bookmarks.getBookmarks() : <Map<String, dynamic>>[];
     if (mounted) {
       setState(() {
+        _loggedIn = loggedIn;
         _items = data;
         _loading = false;
       });
     }
+  }
+
+  static String? _proxyThumb(dynamic raw) {
+    if (raw == null) return null;
+    final s = raw.toString();
+    if (s.isEmpty) return null;
+    if (s.startsWith('https://wsrv.nl/')) return s;
+    return s.startsWith('http') ? 'https://wsrv.nl/?url=$s' : s;
   }
 
   @override
@@ -53,17 +67,80 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
           children: [
             _header(),
             Expanded(
-              child: _items.isEmpty
-                  ? _empty()
-                  : ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.all(15),
-                      itemCount: _items.length,
-                      itemBuilder: (_, i) => _card(_items[i]),
+              child: !_loggedIn
+                  ? _loginRequired()
+                  : RefreshIndicator(
+                      color: AppColors.primary,
+                      backgroundColor: AppColors.card,
+                      onRefresh: _load,
+                      child: _items.isEmpty
+                          ? ListView(
+                              physics:
+                                  const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.6,
+                                  child: _empty(),
+                                ),
+                              ],
+                            )
+                          : ListView.builder(
+                              physics:
+                                  const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(15),
+                              itemCount: _items.length,
+                              itemBuilder: (_, i) => _card(_items[i]),
+                            ),
                     ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _loginRequired() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Ionicons.lock_closed_outline,
+              size: 60, color: AppColors.border),
+          const SizedBox(height: 15),
+          const Text('Login required',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'You need to sign in to view your saved stories.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textSubtle, fontSize: 14),
+            ),
+          ),
+          const SizedBox(height: 25),
+          GestureDetector(
+            onTap: () async {
+              await Navigator.pushNamed(context, AppRoutes.login);
+              _load();
+            },
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text('Sign in',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -117,7 +194,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
         child: Row(
           children: [
             NetImage(
-              url: story['thumbnail'],
+              url: _proxyThumb(story['thumbnail']),
               width: 65,
               height: 90,
               radius: BorderRadius.circular(8),
