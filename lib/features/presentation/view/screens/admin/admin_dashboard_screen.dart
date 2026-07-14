@@ -114,6 +114,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 case 'stories':
                   Navigator.pushNamed(context, AppRoutes.adminStories);
                   break;
+                case 'vip':
+                  Navigator.pushNamed(context, '/admin/vip-packages');
+                  break;
+                case 'reports':
+                  Navigator.pushNamed(context, AppRoutes.adminReports);
+                  break;
               }
             },
             itemBuilder: (context) => const [
@@ -138,6 +144,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     SizedBox(width: 12),
                     Text(
                       'Quản lý truyện',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'vip',
+                child: Row(
+                  children: [
+                    Icon(Ionicons.diamond_outline, color: Color(0xFFA855F7)),
+                    SizedBox(width: 12),
+                    Text(
+                      'Quản lý gói VIP',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'reports',
+                child: Row(
+                  children: [
+                    Icon(Ionicons.flag_outline, color: AppColors.danger),
+                    SizedBox(width: 12),
+                    Text(
+                      'Quản lý báo cáo',
                       style: TextStyle(color: Colors.white),
                     ),
                   ],

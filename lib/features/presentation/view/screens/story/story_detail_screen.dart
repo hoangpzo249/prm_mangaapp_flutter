@@ -7,6 +7,7 @@ import '../../../../../core/errors/app_exceptions.dart';
 import '../../../../data/repositories/bookmark_repository.dart';
 import '../../../../data/repositories/chapter_repository.dart';
 import '../../../../data/repositories/history_repository.dart';
+import '../../../../data/repositories/report_repository.dart';
 import '../../../../data/repositories/story_repository.dart';
 import '../../../../domain/entities/story.dart';
 import '../../widgets/story/chapter_list.dart';
@@ -16,6 +17,7 @@ import '../../widgets/story/story_interaction_section.dart';
 
 class StoryDetailScreen extends StatefulWidget {
   final String storyId;
+
   const StoryDetailScreen({super.key, required this.storyId});
 
   @override
@@ -27,13 +29,17 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   final _chapters = ChapterRepository.instance;
   final _bookmarks = BookmarkRepository.instance;
   final _history = HistoryRepository.instance;
+  final _reports = ReportRepository.instance;
 
   Story? _story;
   String? _firstChapterId;
   String? _continueChapterId;
   num? _continueChapterNumber;
+
   bool _loading = true;
   bool _bookmarked = false;
+  bool _submittingReport = false;
+  String? _loadError;
 
   @override
   void initState() {
@@ -42,24 +48,64 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   }
 
   Future<void> _load() async {
-    final story = await _stories.fetchStoryById(widget.storyId);
-    final chapters = await _chapters.fetchChaptersByStoryId(widget.storyId);
-    if (chapters.isNotEmpty) {
-      chapters.sort((a, b) => a.chapterNumber.compareTo(b.chapterNumber));
-      _firstChapterId = chapters.first.id;
-    }
-    _bookmarked = await _bookmarks.checkBookmark(widget.storyId);
-
-    final entry = await _history.getStoryHistory(widget.storyId);
-    if (entry != null && entry.chapterId != null) {
-      _continueChapterId = entry.chapterId;
-      _continueChapterNumber = entry.chapterNumber;
-    }
-
     if (mounted) {
       setState(() {
+        _loading = true;
+        _loadError = null;
+      });
+    }
+
+    try {
+      final story = await _stories.fetchStoryById(widget.storyId);
+      final chapters = await _chapters.fetchChaptersByStoryId(widget.storyId);
+
+      String? firstChapterId;
+      if (chapters.isNotEmpty) {
+        chapters.sort((a, b) => a.chapterNumber.compareTo(b.chapterNumber));
+        firstChapterId = chapters.first.id;
+      }
+
+      bool bookmarked = false;
+      try {
+        bookmarked = await _bookmarks.checkBookmark(widget.storyId);
+      } on NotLoggedInException {
+        bookmarked = false;
+      }
+
+      String? continueChapterId;
+      num? continueChapterNumber;
+
+      try {
+        final entry = await _history.getStoryHistory(widget.storyId);
+        if (entry != null && entry.chapterId != null) {
+          continueChapterId = entry.chapterId;
+          continueChapterNumber = entry.chapterNumber;
+        }
+      } on NotLoggedInException {
+        continueChapterId = null;
+        continueChapterNumber = null;
+      }
+
+      if (!mounted) return;
+
+      setState(() {
         _story = story;
+        _firstChapterId = firstChapterId;
+        _bookmarked = bookmarked;
+        _continueChapterId = continueChapterId;
+        _continueChapterNumber = continueChapterNumber;
         _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _story = null;
+        _loading = false;
+        _loadError = _extractErrorMessage(
+          error,
+          fallback: 'Unable to load story details',
+        );
       });
     }
   }
@@ -68,50 +114,293 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     try {
       final res = await _bookmarks.toggleBookmark(widget.storyId);
       final isBookmarked = res['isBookmarked'] == true;
+
+      if (!mounted) return;
+
       setState(() => _bookmarked = isBookmarked);
-      _snack(isBookmarked
-          ? 'Added to your library'
-          : 'Removed from your library');
+      _snack(
+        isBookmarked ? 'Added to your library' : 'Removed from your library',
+      );
     } on NotLoggedInException {
-      _loginPrompt();
-    } catch (_) {
-      _snack('Failed to toggle bookmark');
+      if (!mounted) return;
+      _showLoginPrompt(
+        message: 'You need to login to save stories to your library.',
+      );
+    } catch (error) {
+      if (!mounted) return;
+      _snack(
+        _extractErrorMessage(error, fallback: 'Failed to update bookmark'),
+      );
     }
   }
 
-  void _snack(String msg) {
-    if (msg.isEmpty) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(msg)));
+  Future<void> _reportStory() async {
+    if (_submittingReport) return;
+
+    final reason = await _showReportDialog();
+    if (reason == null || reason.trim().isEmpty) return;
+
+    if (!mounted) return;
+
+    setState(() => _submittingReport = true);
+
+    try {
+      await _reports.reportStory(widget.storyId, reason.trim());
+
+      if (!mounted) return;
+      _snack('Report submitted successfully');
+    } on NotLoggedInException {
+      if (!mounted) return;
+      _showLoginPrompt(
+        message: 'You need to login before reporting this story.',
+      );
+    } catch (error) {
+      if (!mounted) return;
+      _snack(_extractErrorMessage(error, fallback: 'Failed to submit report'));
+    } finally {
+      if (mounted) {
+        setState(() => _submittingReport = false);
+      }
+    }
   }
 
-  void _loginPrompt() {
-    showDialog(
+  Future<String?> _showReportDialog() async {
+    const reasons = <String>[
+      'Inappropriate content',
+      'Copyright violation',
+      'Spam or misleading content',
+      'Violence or offensive content',
+      'Other',
+    ];
+
+    final controller = TextEditingController();
+    String? selectedReason;
+
+    final result = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final showCustomReason = selectedReason == 'Other';
+
+            return AlertDialog(
+              backgroundColor: AppColors.card,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 8),
+              contentPadding: const EdgeInsets.fromLTRB(22, 8, 22, 8),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              title: const Row(
+                children: [
+                  Icon(
+                    Ionicons.flag_outline,
+                    color: Colors.redAccent,
+                    size: 24,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Report Story',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Select the reason that best describes the violation.',
+                      style: TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    ...reasons.map(
+                      (reason) => RadioListTile<String>(
+                        value: reason,
+                        groupValue: selectedReason,
+                        onChanged: (value) {
+                          setDialogState(() {
+                            selectedReason = value;
+                          });
+                        },
+                        activeColor: AppColors.primary,
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        visualDensity: VisualDensity.compact,
+                        title: Text(
+                          reason,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (showCustomReason) ...[
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: controller,
+                        minLines: 3,
+                        maxLines: 5,
+                        maxLength: 500,
+                        autofocus: true,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Describe the violation...',
+                          hintStyle: const TextStyle(
+                            color: AppColors.textSubtle,
+                          ),
+                          counterStyle: const TextStyle(
+                            color: AppColors.textSubtle,
+                          ),
+                          filled: true,
+                          fillColor: AppColors.background,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.border,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.border,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: AppColors.textSubtle),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: selectedReason == null
+                      ? null
+                      : () {
+                          final customReason = controller.text.trim();
+
+                          if (selectedReason == 'Other' &&
+                              customReason.isEmpty) {
+                            ScaffoldMessenger.of(context)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please enter a report reason'),
+                                ),
+                              );
+                            return;
+                          }
+
+                          Navigator.pop(
+                            dialogContext,
+                            selectedReason == 'Other'
+                                ? customReason
+                                : selectedReason,
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: AppColors.border.withValues(
+                      alpha: 0.5,
+                    ),
+                    disabledForegroundColor: AppColors.textSubtle,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Submit Report'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    // Không dispose controller ngay sau khi dialog đóng.
+    // TextField vẫn có thể đang được Flutter tháo khỏi widget tree,
+    // dispose tại đây dễ gây assertion `_dependents.isEmpty`.
+    return result;
+  }
+
+  void _snack(String message) {
+    if (!mounted || message.trim().isEmpty) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showLoginPrompt({required String message}) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text('Login Required',
-            style: TextStyle(color: Colors.white)),
-        content: const Text('You need to login to save stories to your library.',
-            style: TextStyle(color: AppColors.textLight)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text(
+          'Login Required',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(color: AppColors.textLight),
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel',
-                style: TextStyle(color: AppColors.textSubtle)),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSubtle),
+            ),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(ctx);
+              Navigator.pop(dialogContext);
               Navigator.pushNamed(context, AppRoutes.login);
             },
-            child: const Text('Login',
-                style: TextStyle(color: AppColors.primary)),
+            child: const Text(
+              'Login',
+              style: TextStyle(color: AppColors.primary),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  String _extractErrorMessage(Object error, {required String fallback}) {
+    final raw = error.toString().trim();
+
+    if (raw.isEmpty) return fallback;
+
+    final cleaned = raw.replaceFirst(RegExp(r'^Exception:\s*'), '');
+    return cleaned.isEmpty ? fallback : cleaned;
   }
 
   @override
@@ -120,44 +409,82 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
       return const Scaffold(
         backgroundColor: AppColors.background,
         body: Center(
-            child: CircularProgressIndicator(color: AppColors.primary)),
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
     if (_story == null) {
       return Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Ionicons.book_outline,
-                  size: 64, color: AppColors.border),
-              const SizedBox(height: 16),
-              const Text('Story not found',
-                  style: TextStyle(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Ionicons.book_outline,
+                    size: 64,
+                    color: AppColors.border,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Story not found',
+                    style: TextStyle(
                       color: AppColors.textSubtle,
                       fontSize: 18,
-                      fontWeight: FontWeight.w600)),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: () => Navigator.pushNamedAndRemoveUntil(
-                    context, AppRoutes.home, (r) => false),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(20),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  child: const Text('Go Back',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16)),
-                ),
+                  if (_loadError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _loadError!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      OutlinedButton(
+                        onPressed: _load,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: const Text('Try Again'),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          AppRoutes.home,
+                          (route) => false,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: const Text('Go Home'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       );
@@ -179,8 +506,9 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                     padding: const EdgeInsets.only(top: 10),
                     decoration: const BoxDecoration(
                       color: AppColors.background,
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(24)),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(24),
+                      ),
                     ),
                     child: Column(
                       children: [
@@ -188,7 +516,9 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                         Container(
                           height: 1,
                           margin: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
                           color: AppColors.card,
                         ),
                         StoryInteractionSection(
@@ -207,12 +537,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
               ],
             ),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _bottomBar(),
-          ),
+          Positioned(left: 0, right: 0, bottom: 0, child: _bottomBar()),
         ],
       ),
     );
@@ -222,61 +547,63 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     final hasContinue = _continueChapterId != null;
     final targetChapterId = _continueChapterId ?? _firstChapterId;
     final hasChapter = targetChapterId != null;
+
     final label = hasContinue
         ? 'Continue Chapter ${_continueChapterNumber ?? ''}'.trim()
         : (hasChapter ? 'Read First Chapter' : 'No Chapters Yet');
+
     return Container(
       height: 110,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Color(0xF20B162C),
-            AppColors.background
-          ],
+          colors: [Colors.transparent, Color(0xF20B162C), AppColors.background],
         ),
       ),
       alignment: Alignment.bottomCenter,
       child: Padding(
-        padding:
-            const EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 30),
+        padding: const EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 10,
+          bottom: 30,
+        ),
         child: Row(
           children: [
-            GestureDetector(
+            _circleActionButton(
               onTap: _toggleBookmark,
-              child: Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: _bookmarked
-                      ? AppColors.primary
-                      : AppColors.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                      color: _bookmarked
-                          ? AppColors.primary
-                          : AppColors.primary.withValues(alpha: 0.3)),
-                ),
-                child: Icon(
-                  _bookmarked
-                      ? Ionicons.bookmark
-                      : Ionicons.bookmark_outline,
-                  size: 24,
-                  color: _bookmarked ? Colors.white : AppColors.primary,
-                ),
-              ),
+              icon: _bookmarked ? Ionicons.bookmark : Ionicons.bookmark_outline,
+              foregroundColor: _bookmarked ? Colors.white : AppColors.primary,
+              backgroundColor: _bookmarked
+                  ? AppColors.primary
+                  : AppColors.primary.withValues(alpha: 0.1),
+              borderColor: _bookmarked
+                  ? AppColors.primary
+                  : AppColors.primary.withValues(alpha: 0.3),
+              tooltip: _bookmarked ? 'Remove bookmark' : 'Add bookmark',
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 10),
+            _circleActionButton(
+              onTap: _submittingReport ? null : _reportStory,
+              icon: Ionicons.flag_outline,
+              foregroundColor: Colors.redAccent,
+              backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
+              borderColor: Colors.redAccent.withValues(alpha: 0.35),
+              tooltip: 'Report story',
+              loading: _submittingReport,
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: GestureDetector(
                 onTap: hasChapter
-                    ? () => Navigator.pushNamed(context,
-                        '${AppRoutes.chapter}/$targetChapterId')
+                    ? () => Navigator.pushNamed(
+                        context,
+                        '${AppRoutes.chapter}/$targetChapterId',
+                      )
                     : null,
                 child: Container(
-                  height: 60,
+                  height: 58,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: hasChapter
@@ -287,8 +614,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                     boxShadow: hasChapter
                         ? [
                             BoxShadow(
-                              color:
-                                  AppColors.primary.withValues(alpha: 0.3),
+                              color: AppColors.primary.withValues(alpha: 0.3),
                               offset: const Offset(0, 4),
                               blurRadius: 8,
                             ),
@@ -304,13 +630,18 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                         color: Colors.white,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        label,
-                        style: const TextStyle(
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5),
+                            letterSpacing: 0.2,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -318,6 +649,47 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _circleActionButton({
+    required VoidCallback? onTap,
+    required IconData icon,
+    required Color foregroundColor,
+    required Color backgroundColor,
+    required Color borderColor,
+    required String tooltip,
+    bool loading = false,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 180),
+          opacity: onTap == null ? 0.6 : 1,
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              shape: BoxShape.circle,
+              border: Border.all(color: borderColor),
+            ),
+            alignment: Alignment.center,
+            child: loading
+                ? const SizedBox(
+                    width: 21,
+                    height: 21,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.2,
+                      color: Colors.redAccent,
+                    ),
+                  )
+                : Icon(icon, size: 23, color: foregroundColor),
+          ),
         ),
       ),
     );

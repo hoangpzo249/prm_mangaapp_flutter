@@ -200,16 +200,17 @@ class AdminRepository {
   }
 
   // --- Reports & Moderation ---
-  Future<List<Map<String, dynamic>>> fetchReports() async {
-    final res = await _api.get('/reports', auth: true);
-    final data = ApiClient.decodeList(res);
-    return data.cast<Map<String, dynamic>>();
+  Future<Map<String, dynamic>> fetchReports({String? status, int page = 1, int limit = 20}) async {
+    var path = '/reports?page=$page&limit=$limit';
+    if (status != null && status != 'all') path += '&status=$status';
+    final res = await _api.get(path, auth: true);
+    return ApiClient.decodeMap(res);
   }
 
-  Future<void> resolveReport(String id, String action) async {
+  Future<void> resolveReport(String id, String action, {String adminNote = ''}) async {
     final res = await _api.put(
       '/reports/$id/resolve',
-      body: {'action': action},
+      body: {'action': action, 'adminNote': adminNote},
       auth: true,
     );
     if (res.statusCode < 200 || res.statusCode >= 300) {
@@ -235,4 +236,4 @@ class AdminRepository {
       );
     }
   }
-}
+}

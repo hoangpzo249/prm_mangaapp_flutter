@@ -5,6 +5,7 @@ import '../../features/domain/entities/story.dart';
 
 import '../../features/presentation/view/screens/admin/admin_chapter_form_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_chapters_list_screen.dart';
+import '../../features/presentation/view/screens/admin/admin_report_management_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_dashboard_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_stories_list_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_story_form_screen.dart';
@@ -26,6 +27,7 @@ import '../../features/presentation/view/screens/story/story_detail_screen.dart'
 import '../../features/presentation/view/screens/payment/transaction_history_screen.dart';
 import '../../features/presentation/view/screens/payment/vip_history_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_vip_package_screen.dart';
+
 /// Central route table.
 ///   /               -> tabs (Home/Explore/History)
 ///   /login /register /profile /payment /bookmarks
@@ -50,6 +52,7 @@ class AppRoutes {
   static const String adminStoryForm = '/admin-story-form';
   static const String adminChapters = '/admin-chapters';
   static const String adminChapterForm = '/admin-chapter-form';
+  static const String adminReports = '/admin-reports';
   static const forgotPassword = '/forgotPassword';
   static const editProfile = '/editProfile';
   static const changePassword = '/changePassword';
@@ -115,7 +118,8 @@ class AppRoutes {
 
       case adminDashboard:
         return _fade(const AdminDashboardScreen(), settings);
-
+      case adminReports:
+        return _fade(const AdminReportManagementScreen(), settings);
       case adminUsers:
         return _fade(const AdminUsersListScreen(), settings);
 
