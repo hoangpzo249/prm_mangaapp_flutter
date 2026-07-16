@@ -75,16 +75,12 @@ class AuthRepository {
     return user;
   }
 
-  Future<AppUser> updateProfile(String fullName) async {
-    final res = await _api.put('/users/me', body: {'fullName': fullName}, auth: true);
-    final data = ApiClient.decodeMap(res);
-    final user = AppUser.fromJson(data['user'] as Map<String, dynamic>);
-    await _storage.setUserInfo(user);
-    return user;
-  }
-
-  Future<AppUser> uploadAvatar(List<int> fileBytes, String fileName) async {
-    final res = await _api.multipartPost('/users/me/avatar', fileBytes, fileName, 'avatar', auth: true);
+  Future<AppUser> updateProfile(String fullName, {String? avatarUrl}) async {
+    final body = <String, dynamic>{'fullName': fullName};
+    if (avatarUrl != null) {
+      body['avatar'] = avatarUrl;
+    }
+    final res = await _api.put('/users/me', body: body, auth: true);
     final data = ApiClient.decodeMap(res);
     final user = AppUser.fromJson(data['user'] as Map<String, dynamic>);
     await _storage.setUserInfo(user);

@@ -40,12 +40,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
+    String tempUrl = '';
+    final bool? submit = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: const Text('Nhập đường dẫn ảnh', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'https://...',
+            hintStyle: TextStyle(color: AppColors.textSubtle),
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+          ),
+          onChanged: (val) => tempUrl = val,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy', style: TextStyle(color: AppColors.textLight)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Đồng ý', style: TextStyle(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
+
+    if (submit == true && tempUrl.trim().isNotEmpty) {
       setState(() => _uploadingAvatar = true);
       try {
-        final bytes = await image.readAsBytes();
-        final updatedUser = await _auth.uploadAvatar(bytes, image.name);
+        final updatedUser = await _auth.updateProfile(_fullName.text, avatarUrl: tempUrl.trim());
         setState(() => _user = updatedUser);
         _alert('Thành công', 'Cập nhật ảnh đại diện thành công.');
       } catch (e) {
@@ -209,33 +237,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _input(TextEditingController c, String hint, IconData icon) {
-    return Container(
-      height: 55,
-      padding: const EdgeInsets.symmetric(horizontal: 15),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: AppColors.textSubtle),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: c,
-              cursorColor: AppColors.primary,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-              decoration: InputDecoration(
-                isCollapsed: true,
-                border: InputBorder.none,
-                hintText: hint,
-                hintStyle: const TextStyle(
-                    color: AppColors.textSubtle, fontSize: 16),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            hint,
+            style: const TextStyle(
+              color: AppColors.textLight,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
           ),
-        ],
-      ),
+        ),
+        Container(
+          height: 55,
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: AppColors.textSubtle),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: c,
+                  cursorColor: AppColors.primary,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  decoration: InputDecoration(
+                    isCollapsed: true,
+                    border: InputBorder.none,
+                    hintText: 'Nhập $hint',
+                    hintStyle: const TextStyle(
+                        color: AppColors.textSubtle, fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
