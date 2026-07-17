@@ -58,15 +58,28 @@ class ApiClient {
   }
 
   /// Decode JSON body, throwing [ApiException] on non-2xx status.
+  /// If the backend returns per-field validation errors (list under key "errors"),
+  /// they are parsed into [ApiException.fieldErrors] keyed by field name.
   static Map<String, dynamic> decodeMap(http.Response res) {
     final dynamic decoded = res.body.isEmpty ? <String, dynamic>{} : jsonDecode(res.body);
     final data = decoded is Map<String, dynamic>
         ? decoded
         : <String, dynamic>{'data': decoded};
     if (res.statusCode < 200 || res.statusCode >= 300) {
+      // Parse per-field errors returned by backend validator middleware
+      final Map<String, String> fieldErrors = {};
+      final rawErrors = data['errors'];
+      if (rawErrors is List) {
+        for (final e in rawErrors) {
+          if (e is Map && e['field'] != null && e['message'] != null) {
+            fieldErrors[e['field'].toString()] = e['message'].toString();
+          }
+        }
+      }
       throw ApiException(
         (data['message'] ?? 'Request failed').toString(),
         status: res.statusCode,
+        fieldErrors: fieldErrors.isNotEmpty ? fieldErrors : null,
       );
     }
     return data;

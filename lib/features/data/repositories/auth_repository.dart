@@ -38,9 +38,7 @@ class AuthRepository {
       'password': password,
       'fullName': fullName,
     });
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      ApiClient.decodeMap(res);
-    }
+    ApiClient.decodeMap(res); // throws ApiException (with fieldErrors) on non-2xx
   }
 
   Future<void> changePassword(String oldPassword, String newPassword) async {
