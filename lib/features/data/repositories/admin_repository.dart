@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/networks/api_client.dart';
 import '../../application/services/api_provider.dart';
 import '../../domain/entities/app_user.dart';
@@ -5,10 +7,14 @@ import '../../domain/entities/chapter.dart';
 import '../../domain/entities/story.dart';
 
 class AdminRepository {
-  AdminRepository._();
+  AdminRepository._() : _api = ApiProvider.client;
+
+  @visibleForTesting
+  AdminRepository.forTesting(this._api);
+
   static final AdminRepository instance = AdminRepository._();
 
-  final ApiClient _api = ApiProvider.client;
+  final ApiClient _api;
 
   // --- Statistics ---
   Future<Map<String, dynamic>> fetchOverview() async {
