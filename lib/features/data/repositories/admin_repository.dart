@@ -88,10 +88,7 @@ class AdminRepository {
   Future<List<Story>> fetchStories() async {
     final res = await _api.get('/stories');
     final data = ApiClient.decodeList(res);
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(Story.fromJson)
-        .toList();
+    return data.whereType<Map<String, dynamic>>().map(Story.fromJson).toList();
   }
 
   Future<Story> fetchStoryById(String id) async {
@@ -118,16 +115,14 @@ class AdminRepository {
     }
   }
 
-  /// Soft delete: đánh dấu ẩn truyện (backend chỉ set isHidden=true).
-  /// Trả về body chứa `refund: { refundedUsers, coinsPerUser, totalCoins }`
-  /// khi có VIP chapter bị ẩn cùng truyện.
-  Future<Map<String, dynamic>> deleteStory(String id) async {
+  /// Soft delete: đánh dấu ẩn truyện (backend chỉ set isHidden=true)
+  Future<void> deleteStory(String id) async {
     final res = await _api.delete('/stories/$id', auth: true);
-    final body = ApiClient.decodeMap(res);
     if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw Exception(body['message'] ?? 'Hide story failed');
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Hide story failed',
+      );
     }
-    return body;
   }
 
   Future<void> restoreStory(String id) async {
@@ -142,10 +137,7 @@ class AdminRepository {
   Future<List<Story>> fetchHiddenStories() async {
     final res = await _api.get('/stories/admin/hidden', auth: true);
     final data = ApiClient.decodeList(res);
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(Story.fromJson)
-        .toList();
+    return data.whereType<Map<String, dynamic>>().map(Story.fromJson).toList();
   }
 
   // --- Chapter Management ---
@@ -176,8 +168,7 @@ class AdminRepository {
     }
   }
 
-  /// Soft delete: đánh dấu ẩn chapter (backend chỉ set isHidden=true).
-  /// Trả về body chứa `refund` khi ẩn chapter VIP.
+  /// Soft delete: đánh dấu ẩn chapter (backend chỉ set isHidden=true)
   Future<Map<String, dynamic>> deleteChapter(String id) async {
     final res = await _api.delete('/chapters/$id', auth: true);
     final body = ApiClient.decodeMap(res);
@@ -209,16 +200,25 @@ class AdminRepository {
   }
 
   // --- Reports & Moderation ---
-  Future<List<Map<String, dynamic>>> fetchReports() async {
-    final res = await _api.get('/reports', auth: true);
-    final data = ApiClient.decodeList(res);
-    return data.cast<Map<String, dynamic>>();
+  Future<Map<String, dynamic>> fetchReports({
+    String? status,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    var path = '/reports?page=$page&limit=$limit';
+    if (status != null && status != 'all') path += '&status=$status';
+    final res = await _api.get(path, auth: true);
+    return ApiClient.decodeMap(res);
   }
 
-  Future<void> resolveReport(String id, String action) async {
+  Future<void> resolveReport(
+    String id,
+    String action, {
+    String adminNote = '',
+  }) async {
     final res = await _api.put(
       '/reports/$id/resolve',
-      body: {'action': action},
+      body: {'action': action, 'adminNote': adminNote},
       auth: true,
     );
     if (res.statusCode < 200 || res.statusCode >= 300) {

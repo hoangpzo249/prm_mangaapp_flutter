@@ -280,15 +280,15 @@ class _AdminStoryFormScreenState extends State<AdminStoryFormScreen> {
         children: [
           Row(
             children: const [
-              Icon(Ionicons.pricetags_outline,
-                  color: AppColors.textSubtle, size: 20),
+              Icon(
+                Ionicons.pricetags_outline,
+                color: AppColors.textSubtle,
+                size: 20,
+              ),
               SizedBox(width: 12),
               Text(
                 'Thể loại',
-                style: TextStyle(
-                  color: AppColors.textSubtle,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: AppColors.textSubtle, fontSize: 14),
               ),
             ],
           ),

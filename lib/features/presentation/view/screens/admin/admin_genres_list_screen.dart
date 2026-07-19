@@ -59,8 +59,10 @@ class _AdminGenresListScreenState extends State<AdminGenresListScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text('Xóa thể loại',
-            style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Xóa thể loại',
+          style: TextStyle(color: Colors.white),
+        ),
         content: Text(
           'Xóa thể loại "$name"? Truyện đang gắn thể loại này sẽ mất tham chiếu.',
           style: const TextStyle(color: AppColors.textLight),
@@ -68,13 +70,14 @@ class _AdminGenresListScreenState extends State<AdminGenresListScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy',
-                style: TextStyle(color: AppColors.textSubtle)),
+            child: const Text(
+              'Hủy',
+              style: TextStyle(color: AppColors.textSubtle),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Xóa',
-                style: TextStyle(color: AppColors.danger)),
+            child: const Text('Xóa', style: TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -118,32 +121,34 @@ class _AdminGenresListScreenState extends State<AdminGenresListScreen> {
               child: CircularProgressIndicator(color: AppColors.primary),
             )
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Lỗi: $_error',
-                          style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadGenres,
-                        child: const Text('Tải lại'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Lỗi: $_error',
+                    style: const TextStyle(color: Colors.red),
                   ),
-                )
-              : _genres.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'Chưa có thể loại nào',
-                        style: TextStyle(color: AppColors.textSubtle),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(12),
-                      itemCount: _genres.length,
-                      itemBuilder: (_, i) => _buildItem(_genres[i]),
-                    ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadGenres,
+                    child: const Text('Tải lại'),
+                  ),
+                ],
+              ),
+            )
+          : _genres.isEmpty
+          ? const Center(
+              child: Text(
+                'Chưa có thể loại nào',
+                style: TextStyle(color: AppColors.textSubtle),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: _genres.length,
+              itemBuilder: (_, i) => _buildItem(_genres[i]),
+            ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primary,
         onPressed: () => _openForm(),
@@ -206,7 +211,9 @@ class _AdminGenresListScreenState extends State<AdminGenresListScreen> {
                     if (!active)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.danger.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
@@ -234,13 +241,19 @@ class _AdminGenresListScreenState extends State<AdminGenresListScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Ionicons.create_outline,
-                color: AppColors.primary, size: 20),
+            icon: const Icon(
+              Ionicons.create_outline,
+              color: AppColors.primary,
+              size: 20,
+            ),
             onPressed: () => _openForm(genre: genre),
           ),
           IconButton(
-            icon: const Icon(Ionicons.trash_outline,
-                color: AppColors.danger, size: 20),
+            icon: const Icon(
+              Ionicons.trash_outline,
+              color: AppColors.danger,
+              size: 20,
+            ),
             onPressed: () => _confirmDelete(genre),
           ),
         ],
@@ -309,9 +322,7 @@ class _GenreFormDialogState extends State<_GenreFormDialog> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Lỗi: ${e.toString().replaceFirst('Exception: ', '')}',
-          ),
+          content: Text('Lỗi: ${e.toString().replaceFirst('Exception: ', '')}'),
         ),
       );
     } finally {
@@ -369,8 +380,10 @@ class _GenreFormDialogState extends State<_GenreFormDialog> {
                 children: [
                   TextButton(
                     onPressed: _saving ? null : () => Navigator.pop(context),
-                    child: const Text('Hủy',
-                        style: TextStyle(color: AppColors.textSubtle)),
+                    child: const Text(
+                      'Hủy',
+                      style: TextStyle(color: AppColors.textSubtle),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
