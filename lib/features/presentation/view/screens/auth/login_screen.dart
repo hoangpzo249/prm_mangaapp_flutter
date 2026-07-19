@@ -18,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _username = TextEditingController();
   final _password = TextEditingController();
   bool _loading = false;
+  bool _obscurePassword = true;
 
   Future<void> _login() async {
     if (_username.text.isEmpty || _password.text.isEmpty) {
@@ -84,8 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 40),
                     _input(_username, 'Username', Ionicons.person_outline),
                     const SizedBox(height: 15),
-                    _input(_password, 'Password', Ionicons.lock_closed_outline,
-                        obscure: true),
+                    _passwordInput(),
                     const SizedBox(height: 10),
                     Align(
                       alignment: Alignment.centerRight,
@@ -135,8 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _input(TextEditingController c, String hint, IconData icon,
-      {bool obscure = false}) {
+  Widget _input(TextEditingController c, String hint, IconData icon) {
     return Container(
       height: 55,
       padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -151,9 +150,8 @@ class _LoginScreenState extends State<LoginScreen> {
           Expanded(
             child: TextField(
               controller: c,
-              obscureText: obscure,
               autocorrect: false,
-              enableSuggestions: !obscure,
+              enableSuggestions: false,
               textCapitalization: TextCapitalization.none,
               cursorColor: AppColors.primary,
               style: const TextStyle(color: Colors.white, fontSize: 16),
@@ -164,6 +162,52 @@ class _LoginScreenState extends State<LoginScreen> {
                 hintStyle: const TextStyle(
                     color: AppColors.textSubtle, fontSize: 16),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _passwordInput() {
+    return Container(
+      height: 55,
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Ionicons.lock_closed_outline,
+              size: 20, color: AppColors.textSubtle),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: _password,
+              obscureText: _obscurePassword,
+              autocorrect: false,
+              enableSuggestions: false,
+              textCapitalization: TextCapitalization.none,
+              cursorColor: AppColors.primary,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              decoration: const InputDecoration(
+                isCollapsed: true,
+                border: InputBorder.none,
+                hintText: 'Password',
+                hintStyle:
+                    TextStyle(color: AppColors.textSubtle, fontSize: 16),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+            child: Icon(
+              _obscurePassword
+                  ? Ionicons.eye_off_outline
+                  : Ionicons.eye_outline,
+              size: 20,
+              color: AppColors.textSubtle,
             ),
           ),
         ],

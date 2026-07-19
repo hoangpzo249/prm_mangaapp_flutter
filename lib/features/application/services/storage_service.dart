@@ -11,6 +11,7 @@ class StorageService {
   static const _kToken = 'userToken';
   static const _kUserInfo = 'userInfo';
   static const _kHistory = '@reading_history';
+  static const _kReadingMode = '@reading_mode';
 
   Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
 
@@ -21,6 +22,12 @@ class StorageService {
 
   Future<void> setUserInfo(AppUser user) async =>
       (await _prefs).setString(_kUserInfo, jsonEncode(user.toJson()));
+
+  Future<String> getReadingMode() async =>
+      (await _prefs).getString(_kReadingMode) ?? 'vertical';
+
+  Future<void> setReadingMode(String mode) async =>
+      (await _prefs).setString(_kReadingMode, mode);
 
   Future<AppUser?> getUser() async {
     final str = (await _prefs).getString(_kUserInfo);
