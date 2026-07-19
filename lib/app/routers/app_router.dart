@@ -7,6 +7,7 @@ import '../../features/presentation/view/screens/admin/admin_chapter_form_screen
 import '../../features/presentation/view/screens/admin/admin_chapters_list_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_report_management_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_dashboard_screen.dart';
+import '../../features/presentation/view/screens/admin/admin_genres_list_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_stories_list_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_story_form_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_user_form_screen.dart';
@@ -41,6 +42,7 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String payment = '/payment';
   static const String bookmarks = '/bookmarks';
+  static const String notifications = '/notifications';
 
   static const String story = '/story';
   static const String chapter = '/chapter';
@@ -53,6 +55,7 @@ class AppRoutes {
   static const String adminChapters = '/admin-chapters';
   static const String adminChapterForm = '/admin-chapter-form';
   static const String adminReports = '/admin-reports';
+  static const String adminGenres = '/admin-genres';
   static const forgotPassword = '/forgotPassword';
   static const editProfile = '/editProfile';
   static const changePassword = '/changePassword';
@@ -77,10 +80,12 @@ class AppRoutes {
 
         int initialIndex = 0;
         String? exploreSort;
+        List<String>? exploreGenreIds;
 
         if (arguments is Map<String, dynamic>) {
           final tab = arguments['tab'];
           final sort = arguments['sort'];
+          final genreIds = arguments['genreIds'];
 
           if (tab is int) {
             initialIndex = tab;
@@ -89,10 +94,21 @@ class AppRoutes {
           if (sort is String) {
             exploreSort = sort;
           }
+
+          if (genreIds is List) {
+            exploreGenreIds = genreIds
+                .map((e) => e.toString())
+                .where((s) => s.isNotEmpty)
+                .toList();
+          }
         }
 
         return _fade(
-          MainTabs(initialIndex: initialIndex, exploreSort: exploreSort),
+          MainTabs(
+            initialIndex: initialIndex,
+            exploreSort: exploreSort,
+            exploreGenreIds: exploreGenreIds,
+          ),
           settings,
         );
 
@@ -116,6 +132,9 @@ class AppRoutes {
       case AppRoutes.bookmarks:
         return _fade(const BookmarksScreen(), settings);
 
+      case AppRoutes.notifications:
+        return _fade(const NotificationsScreen(), settings);
+
       case adminDashboard:
         return _fade(const AdminDashboardScreen(), settings);
       case adminReports:
@@ -133,6 +152,9 @@ class AppRoutes {
 
       case adminStories:
         return _fade(const AdminStoriesListScreen(), settings);
+
+      case adminGenres:
+        return _fade(const AdminGenresListScreen(), settings);
 
       case adminStoryForm:
         final arguments = settings.arguments;

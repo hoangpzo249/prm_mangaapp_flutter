@@ -95,10 +95,7 @@ class _AdminChaptersListScreenState extends State<AdminChaptersListScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text(
-          'Ẩn chương',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Ẩn chương', style: TextStyle(color: Colors.white)),
         content: Text(
           'Ẩn Chương ${chapter.chapterNumber}? Người đọc sẽ không thấy '
           'chương này. Bạn có thể khôi phục trong mục "Đã ẩn".',
@@ -114,10 +111,7 @@ class _AdminChaptersListScreenState extends State<AdminChaptersListScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'Ẩn',
-              style: TextStyle(color: AppColors.danger),
-            ),
+            child: const Text('Ẩn', style: TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -126,13 +120,15 @@ class _AdminChaptersListScreenState extends State<AdminChaptersListScreen> {
     if (confirm != true) return;
 
     try {
-      await _adminRepo.deleteChapter(chapter.id);
-      _snack('Đã ẩn Chương ${chapter.chapterNumber}');
+      final res = await _adminRepo.deleteChapter(chapter.id);
+      final refund = res['refund'];
+      final users = refund is Map ? (refund['refundedUsers'] ?? 0) as int : 0;
+      final coins = refund is Map ? (refund['totalCoins'] ?? 0) as int : 0;
+      final suffix = users > 0 ? ' · Hoàn $coins xu cho $users user' : '';
+      _snack('Đã ẩn Chương ${chapter.chapterNumber}$suffix');
       _loadChapters();
     } catch (e) {
-      _snack(
-        'Ẩn thất bại: ${e.toString().replaceFirst('Exception: ', '')}',
-      );
+      _snack('Ẩn thất bại: ${e.toString().replaceFirst('Exception: ', '')}');
     }
   }
 
@@ -205,10 +201,7 @@ class _AdminChaptersListScreenState extends State<AdminChaptersListScreen> {
             ),
             Text(
               widget.story.title,
-              style: const TextStyle(
-                color: AppColors.textSubtle,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: AppColors.textSubtle, fontSize: 12),
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -409,10 +402,7 @@ class _AdminChaptersListScreenState extends State<AdminChaptersListScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.card,
-            AppColors.card.withValues(alpha: 0.75),
-          ],
+          colors: [AppColors.card, AppColors.card.withValues(alpha: 0.75)],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border, width: 1),
@@ -578,9 +568,7 @@ class _AdminChaptersListScreenState extends State<AdminChaptersListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.gold, AppColors.goldDeep],
-        ),
+        gradient: LinearGradient(colors: [AppColors.gold, AppColors.goldDeep]),
         borderRadius: BorderRadius.circular(6),
         boxShadow: [
           BoxShadow(

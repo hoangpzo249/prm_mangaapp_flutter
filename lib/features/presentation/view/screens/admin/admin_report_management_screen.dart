@@ -20,7 +20,7 @@ class _AdminReportManagementScreenState
     'all',
     'pending',
     'resolved',
-    'rejected',
+    'dismissed',
   ];
 
   bool _loading = true;
@@ -210,8 +210,8 @@ class _AdminReportManagementScreenState
       case 'pending':
         return 'Chờ xử lý';
       case 'resolved':
-        return 'Đã xử lý';
-      case 'rejected':
+        return 'Đã duyệt';
+      case 'dismissed':
         return 'Từ chối';
       default:
         return 'Tất cả';
@@ -224,7 +224,7 @@ class _AdminReportManagementScreenState
         return Colors.orangeAccent;
       case 'resolved':
         return Colors.greenAccent;
-      case 'rejected':
+      case 'dismissed':
         return Colors.redAccent;
       default:
         return AppColors.primary;
@@ -446,7 +446,7 @@ class _ReportCard extends StatelessWidget {
     switch (status) {
       case 'resolved':
         return Colors.greenAccent;
-      case 'rejected':
+      case 'dismissed':
         return Colors.redAccent;
       default:
         return Colors.orangeAccent;
@@ -456,8 +456,8 @@ class _ReportCard extends StatelessWidget {
   String _statusLabel(String status) {
     switch (status) {
       case 'resolved':
-        return 'Đã xử lý';
-      case 'rejected':
+        return 'Đã duyệt';
+      case 'dismissed':
         return 'Từ chối';
       default:
         return 'Chờ xử lý';
@@ -610,6 +610,19 @@ class _ReportDetailSheetState extends State<_ReportDetailSheet> {
     return fallback;
   }
 
+  String _statusDisplay(String status) {
+    switch (status) {
+      case 'pending':
+        return 'Chờ xử lý';
+      case 'resolved':
+        return 'Đã duyệt';
+      case 'dismissed':
+        return 'Từ chối';
+      default:
+        return status;
+    }
+  }
+
   String _nestedValue(
     String parent,
     List<String> keys, {
@@ -632,13 +645,64 @@ class _ReportDetailSheetState extends State<_ReportDetailSheet> {
     return fallback;
   }
 
+  String _targetTitle() {
+    final targetType = _value(['targetType'], fallback: 'unknown');
+    final target = widget.report['target'];
+
+    if (target is Map) {
+      final map = Map<String, dynamic>.from(target);
+      if (targetType == 'comment') {
+        final commentText = _stringValue(map['content']);
+        if (commentText.isNotEmpty) return commentText;
+      }
+
+      final title = _stringValue(map['title']);
+      if (title.isNotEmpty) return title;
+    }
+
+    return _value(['targetId']);
+  }
+
+  String _targetUserName() {
+    final targetType = _value(['targetType'], fallback: 'unknown');
+    final target = widget.report['target'];
+
+    if (target is Map) {
+      final map = Map<String, dynamic>.from(target);
+      if (targetType == 'comment') {
+        final user = map['userId'];
+        if (user is Map) {
+          final userMap = Map<String, dynamic>.from(user);
+          final name = _stringValue(userMap['fullName']);
+          if (name.isNotEmpty) return name;
+          final username = _stringValue(userMap['username']);
+          if (username.isNotEmpty) return username;
+        }
+      }
+    }
+
+    return 'Không xác định';
+  }
+
+  String _stringValue(dynamic value) {
+    if (value == null) return '';
+    final text = value.toString().trim();
+    return text;
+  }
+
   Future<void> _submit(String action) async {
     if (_submitting) return;
 
     setState(() => _submitting = true);
 
     try {
-      await widget.onResolve(action, _noteController.text.trim());
+      final normalizedAction = switch (action) {
+        'resolve' => 'approve',
+        'reject' => 'dismiss',
+        _ => action,
+      };
+
+      await widget.onResolve(normalizedAction, _noteController.text.trim());
     } catch (error) {
       if (!mounted) return;
 
@@ -717,9 +781,14 @@ class _ReportDetailSheetState extends State<_ReportDetailSheet> {
                   'email',
                 ]),
               ),
+              if (targetType == 'comment') ...[
+                _DetailRow(title: 'Nội dung bình luận', value: _targetTitle()),
+                _DetailRow(title: 'Người bị báo cáo', value: _targetUserName()),
+              ] else ...[
+                _DetailRow(title: 'Tên truyện bị báo cáo', value: _targetTitle()),
+              ],
               _DetailRow(title: 'Lý do', value: _value(['reason'])),
-              _DetailRow(title: 'ID đối tượng', value: _value(['targetId'])),
-              _DetailRow(title: 'Trạng thái', value: status),
+              _DetailRow(title: 'Trạng thái', value: _statusDisplay(status)),
               if (status == 'pending') ...[
                 const SizedBox(height: 18),
                 TextField(
@@ -783,7 +852,7 @@ class _ReportDetailSheetState extends State<_ReportDetailSheet> {
                                 ),
                               )
                             : const Icon(Ionicons.checkmark_circle_outline),
-                        label: const Text('Xử lý'),
+                        label: const Text('Duyệt'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,

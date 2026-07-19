@@ -1,4 +1,5 @@
 import 'chapter.dart';
+import 'genre.dart';
 
 class Story {
   final String id;
@@ -14,7 +15,7 @@ class Story {
   final num ratingCount;
   final num bookmarkCount;
   final String? updatedAt;
-  final List<String> genres;
+  final List<Genre> genres;
   final Chapter? latestChapter;
   final List<Chapter> latestChapters;
 
@@ -92,14 +93,19 @@ class Story {
 
       genres: genresRaw is List
           ? genresRaw
-              .map(
-                (genre) => genre is Map
-                    ? (genre['name'] ?? '').toString()
-                    : genre.toString(),
-              )
-              .where((genre) => genre.isNotEmpty)
+              .map<Genre?>((g) {
+                if (g is Map<String, dynamic>) return Genre.fromJson(g);
+                if (g is Map) {
+                  return Genre.fromJson(Map<String, dynamic>.from(g));
+                }
+                final id = g?.toString() ?? '';
+                if (id.isEmpty) return null;
+                return Genre(id: id, name: id);
+              })
+              .whereType<Genre>()
+              .where((g) => g.id.isNotEmpty || g.name.isNotEmpty)
               .toList()
-          : const [],
+          : const <Genre>[],
 
       latestChapter: json['latestChapter'] is Map<String, dynamic>
           ? Chapter.fromJson(

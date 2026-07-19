@@ -14,12 +14,11 @@
 //   );
 // }
 
-
 import 'package:flutter/foundation.dart' show kIsWeb;
- 
+
 import '../../../core/networks/api_client.dart';
 import 'storage_service.dart';
- 
+
 /// Single shared [ApiClient] instance.
 ///
 /// Base host thay đổi tuỳ môi trường chạy:
@@ -29,10 +28,10 @@ import 'storage_service.dart';
 ///   ví dụ '192.168.1.3'. Sửa trực tiếp biến `_host` bên dưới khi test bằng máy thật.
 class ApiProvider {
   ApiProvider._();
- 
-  static const String _host = kIsWeb ? 'localhost' : '10.33.57.83';
+
+  static const String _host = kIsWeb ? 'localhost' : '192.168.1.141';
   static const String baseUrl = 'http://$_host:9999/api';
- 
+
   static final ApiClient client = ApiClient(
     baseUrl: baseUrl,
     tokenProvider: StorageService.instance.getToken,

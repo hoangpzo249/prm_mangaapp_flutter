@@ -82,10 +82,7 @@ class AdminRepository {
   Future<List<Story>> fetchStories() async {
     final res = await _api.get('/stories');
     final data = ApiClient.decodeList(res);
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(Story.fromJson)
-        .toList();
+    return data.whereType<Map<String, dynamic>>().map(Story.fromJson).toList();
   }
 
   Future<Story> fetchStoryById(String id) async {
@@ -134,10 +131,7 @@ class AdminRepository {
   Future<List<Story>> fetchHiddenStories() async {
     final res = await _api.get('/stories/admin/hidden', auth: true);
     final data = ApiClient.decodeList(res);
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(Story.fromJson)
-        .toList();
+    return data.whereType<Map<String, dynamic>>().map(Story.fromJson).toList();
   }
 
   // --- Chapter Management ---
@@ -169,13 +163,13 @@ class AdminRepository {
   }
 
   /// Soft delete: đánh dấu ẩn chapter (backend chỉ set isHidden=true)
-  Future<void> deleteChapter(String id) async {
+  Future<Map<String, dynamic>> deleteChapter(String id) async {
     final res = await _api.delete('/chapters/$id', auth: true);
+    final body = ApiClient.decodeMap(res);
     if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw Exception(
-        ApiClient.decodeMap(res)['message'] ?? 'Hide chapter failed',
-      );
+      throw Exception(body['message'] ?? 'Hide chapter failed');
     }
+    return body;
   }
 
   Future<void> restoreChapter(String id) async {
@@ -200,14 +194,22 @@ class AdminRepository {
   }
 
   // --- Reports & Moderation ---
-  Future<Map<String, dynamic>> fetchReports({String? status, int page = 1, int limit = 20}) async {
+  Future<Map<String, dynamic>> fetchReports({
+    String? status,
+    int page = 1,
+    int limit = 20,
+  }) async {
     var path = '/reports?page=$page&limit=$limit';
     if (status != null && status != 'all') path += '&status=$status';
     final res = await _api.get(path, auth: true);
     return ApiClient.decodeMap(res);
   }
 
-  Future<void> resolveReport(String id, String action, {String adminNote = ''}) async {
+  Future<void> resolveReport(
+    String id,
+    String action, {
+    String adminNote = '',
+  }) async {
     final res = await _api.put(
       '/reports/$id/resolve',
       body: {'action': action, 'adminNote': adminNote},
@@ -236,4 +238,4 @@ class AdminRepository {
       );
     }
   }
-}
+}

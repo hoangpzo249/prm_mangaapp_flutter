@@ -120,6 +120,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 case 'reports':
                   Navigator.pushNamed(context, AppRoutes.adminReports);
                   break;
+                case 'genres':
+                  Navigator.pushNamed(context, AppRoutes.adminGenres);
+                  break;
               }
             },
             itemBuilder: (context) => const [
@@ -170,6 +173,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     SizedBox(width: 12),
                     Text(
                       'Quản lý báo cáo',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'genres',
+                child: Row(
+                  children: [
+                    Icon(Ionicons.pricetags_outline, color: AppColors.online),
+                    SizedBox(width: 12),
+                    Text(
+                      'Quản lý thể loại',
                       style: TextStyle(color: Colors.white),
                     ),
                   ],

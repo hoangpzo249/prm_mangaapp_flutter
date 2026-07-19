@@ -65,7 +65,8 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
 
   List<VipPackage> get _filteredPackages {
     if (_filter == 'active') return _packages.where((p) => p.isActive).toList();
-    if (_filter == 'inactive') return _packages.where((p) => !p.isActive).toList();
+    if (_filter == 'inactive')
+      return _packages.where((p) => !p.isActive).toList();
     return _packages;
   }
 
@@ -75,7 +76,9 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
       await _loadData();
       if (mounted) {
         _snack(
-          pkg.isActive ? 'Đã ẩn gói "${pkg.name}"' : 'Đã kích hoạt gói "${pkg.name}"',
+          pkg.isActive
+              ? 'Đã ẩn gói "${pkg.name}"'
+              : 'Đã kích hoạt gói "${pkg.name}"',
           pkg.isActive ? Colors.orange : AppColors.online,
         );
       }
@@ -95,17 +98,27 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
           children: [
             Icon(Ionicons.warning_outline, color: AppColors.danger, size: 22),
             SizedBox(width: 8),
-            Text('Xác nhận xóa', style: TextStyle(color: Colors.white, fontSize: 18)),
+            Text(
+              'Xác nhận xóa',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
           ],
         ),
         content: RichText(
           text: TextSpan(
-            style: const TextStyle(color: AppColors.textLight, fontSize: 14, height: 1.5),
+            style: const TextStyle(
+              color: AppColors.textLight,
+              fontSize: 14,
+              height: 1.5,
+            ),
             children: [
               const TextSpan(text: 'Bạn có chắc muốn xóa gói '),
               TextSpan(
                 text: '"${pkg.name}"',
-                style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: AppColors.gold,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const TextSpan(text: '?\n\nHành động này không thể hoàn tác.'),
             ],
@@ -114,12 +127,17 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy', style: TextStyle(color: AppColors.textSubtle)),
+            child: const Text(
+              'Hủy',
+              style: TextStyle(color: AppColors.textSubtle),
+            ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.danger,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Xóa vĩnh viễn'),
@@ -142,8 +160,12 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
   void _showPackageDialog([VipPackage? pkg]) {
     final isEdit = pkg != null;
     final nameCtrl = TextEditingController(text: pkg?.name ?? '');
-    final durationCtrl = TextEditingController(text: pkg?.durationDays.toString() ?? '');
-    final priceCtrl = TextEditingController(text: pkg?.priceCoins.toString() ?? '');
+    final durationCtrl = TextEditingController(
+      text: pkg?.durationDays.toString() ?? '',
+    );
+    final priceCtrl = TextEditingController(
+      text: pkg?.priceCoins.toString() ?? '',
+    );
     final descCtrl = TextEditingController(text: pkg?.description ?? '');
     bool isActive = pkg?.isActive ?? true;
     final formKey = GlobalKey<FormState>();
@@ -186,7 +208,9 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                         AppColors.goldDeep.withValues(alpha: 0.05),
                       ],
                     ),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
                     border: const Border(
                       bottom: BorderSide(color: AppColors.border),
                     ),
@@ -232,8 +256,9 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                           label: 'Tên gói',
                           hint: 'VD: VIP 1 Tháng',
                           icon: Ionicons.diamond_outline,
-                          validator: (v) =>
-                              (v == null || v.trim().isEmpty) ? 'Vui lòng nhập tên gói' : null,
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Vui lòng nhập tên gói'
+                              : null,
                         ),
                         const SizedBox(height: 14),
                         Row(
@@ -245,10 +270,13 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                                 hint: 'VD: 30',
                                 icon: Ionicons.calendar_outline,
                                 keyboardType: TextInputType.number,
-                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
                                 validator: (v) {
                                   final n = int.tryParse(v ?? '');
-                                  if (n == null || n <= 0) return 'Số ngày phải > 0';
+                                  if (n == null || n <= 0)
+                                    return 'Số ngày phải > 0';
                                   return null;
                                 },
                               ),
@@ -261,7 +289,9 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                                 hint: 'VD: 150',
                                 icon: Ionicons.cash_outline,
                                 keyboardType: TextInputType.number,
-                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
                                 validator: (v) {
                                   final n = int.tryParse(v ?? '');
                                   if (n == null || n < 0) return 'Giá phải ≥ 0';
@@ -282,7 +312,10 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                         const SizedBox(height: 14),
                         // Active toggle
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.surface,
                             borderRadius: BorderRadius.circular(12),
@@ -291,8 +324,12 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                           child: Row(
                             children: [
                               Icon(
-                                isActive ? Ionicons.checkmark_circle : Ionicons.close_circle_outline,
-                                color: isActive ? AppColors.online : AppColors.textDim,
+                                isActive
+                                    ? Ionicons.checkmark_circle
+                                    : Ionicons.close_circle_outline,
+                                color: isActive
+                                    ? AppColors.online
+                                    : AppColors.textDim,
                                 size: 20,
                               ),
                               const SizedBox(width: 10),
@@ -302,12 +339,17 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                                   children: [
                                     const Text(
                                       'Trạng thái',
-                                      style: TextStyle(color: AppColors.textSubtle, fontSize: 12),
+                                      style: TextStyle(
+                                        color: AppColors.textSubtle,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                     Text(
                                       isActive ? 'Đang kích hoạt' : 'Đã ẩn',
                                       style: TextStyle(
-                                        color: isActive ? AppColors.online : AppColors.textDim,
+                                        color: isActive
+                                            ? AppColors.online
+                                            : AppColors.textDim,
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -317,7 +359,8 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                               ),
                               Switch(
                                 value: isActive,
-                                onChanged: (val) => setStateSB(() => isActive = val),
+                                onChanged: (val) =>
+                                    setStateSB(() => isActive = val),
                                 activeColor: AppColors.online,
                               ),
                             ],
@@ -338,10 +381,15 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppColors.border),
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           onPressed: saving ? null : () => Navigator.pop(ctx),
-                          child: const Text('Hủy', style: TextStyle(color: AppColors.textSubtle)),
+                          child: const Text(
+                            'Hủy',
+                            style: TextStyle(color: AppColors.textSubtle),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -351,7 +399,9 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.gold,
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           onPressed: saving
                               ? null
@@ -361,13 +411,18 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                                   try {
                                     final body = {
                                       'name': nameCtrl.text.trim(),
-                                      'durationDays': int.parse(durationCtrl.text),
+                                      'durationDays': int.parse(
+                                        durationCtrl.text,
+                                      ),
                                       'priceCoins': int.parse(priceCtrl.text),
                                       'description': descCtrl.text.trim(),
                                       'isActive': isActive,
                                     };
                                     if (isEdit) {
-                                      await _payment.updatePackage(pkg.id, body);
+                                      await _payment.updatePackage(
+                                        pkg.id,
+                                        body,
+                                      );
                                     } else {
                                       await _payment.createPackage(body);
                                     }
@@ -375,13 +430,16 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                                     await _loadData();
                                     if (mounted) {
                                       _snack(
-                                        isEdit ? 'Cập nhật thành công!' : 'Thêm gói thành công!',
+                                        isEdit
+                                            ? 'Cập nhật thành công!'
+                                            : 'Thêm gói thành công!',
                                         AppColors.online,
                                       );
                                     }
                                   } catch (e) {
                                     setStateSB(() => saving = false);
-                                    if (mounted) _snack('Lỗi: $e', AppColors.danger);
+                                    if (mounted)
+                                      _snack('Lỗi: $e', AppColors.danger);
                                   }
                                 },
                           child: saving
@@ -419,12 +477,19 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
         content: Row(
           children: [
             Icon(
-              color == AppColors.danger ? Ionicons.close_circle : Ionicons.checkmark_circle,
+              color == AppColors.danger
+                  ? Ionicons.close_circle
+                  : Ionicons.checkmark_circle,
               color: Colors.white,
               size: 18,
             ),
             const SizedBox(width: 8),
-            Expanded(child: Text(msg, style: const TextStyle(fontWeight: FontWeight.w500))),
+            Expanded(
+              child: Text(
+                msg,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ),
           ],
         ),
         backgroundColor: color,
@@ -448,7 +513,11 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
         ),
         title: const Text(
           'Quản lý Gói VIP',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
         actions: [
           IconButton(
@@ -459,13 +528,19 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
         ],
       ),
       floatingActionButton: ScaleTransition(
-        scale: CurvedAnimation(parent: _fabAnimController, curve: Curves.elasticOut),
+        scale: CurvedAnimation(
+          parent: _fabAnimController,
+          curve: Curves.elasticOut,
+        ),
         child: FloatingActionButton.extended(
           backgroundColor: AppColors.gold,
           foregroundColor: Colors.white,
           onPressed: () => _showPackageDialog(),
           icon: const Icon(Ionicons.add),
-          label: const Text('Thêm gói', style: TextStyle(fontWeight: FontWeight.bold)),
+          label: const Text(
+            'Thêm gói',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ),
       body: Column(
@@ -491,17 +566,37 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
       ),
       child: Row(
         children: [
-          _buildStatChip(total.toString(), 'Tổng cộng', AppColors.primary, Ionicons.layers_outline),
+          _buildStatChip(
+            total.toString(),
+            'Tổng cộng',
+            AppColors.primary,
+            Ionicons.layers_outline,
+          ),
           const SizedBox(width: 10),
-          _buildStatChip(active.toString(), 'Đang bán', AppColors.online, Ionicons.checkmark_circle_outline),
+          _buildStatChip(
+            active.toString(),
+            'Đang bán',
+            AppColors.online,
+            Ionicons.checkmark_circle_outline,
+          ),
           const SizedBox(width: 10),
-          _buildStatChip(inactive.toString(), 'Đã ẩn', AppColors.textDim, Ionicons.eye_off_outline),
+          _buildStatChip(
+            inactive.toString(),
+            'Đã ẩn',
+            AppColors.textDim,
+            Ionicons.eye_off_outline,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatChip(String count, String label, Color color, IconData icon) {
+  Widget _buildStatChip(
+    String count,
+    String label,
+    Color color,
+    IconData icon,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -518,9 +613,21 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(count,
-                    style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
-                Text(label, style: const TextStyle(color: AppColors.textSubtle, fontSize: 10)),
+                Text(
+                  count,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.textSubtle,
+                    fontSize: 10,
+                  ),
+                ),
               ],
             ),
           ],
@@ -551,7 +658,9 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
                   gradient: isSelected
-                      ? const LinearGradient(colors: [AppColors.gold, AppColors.goldDeep])
+                      ? const LinearGradient(
+                          colors: [AppColors.gold, AppColors.goldDeep],
+                        )
                       : null,
                   color: isSelected ? null : AppColors.card,
                   borderRadius: BorderRadius.circular(10),
@@ -564,7 +673,9 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                   f.$2,
                   style: TextStyle(
                     color: isSelected ? Colors.white : AppColors.textSubtle,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     fontSize: 13,
                   ),
                 ),
@@ -578,7 +689,9 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.gold));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.gold),
+      );
     }
 
     if (_error != null) {
@@ -586,11 +699,21 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Ionicons.warning_outline, color: AppColors.danger, size: 48),
+            const Icon(
+              Ionicons.warning_outline,
+              color: AppColors.danger,
+              size: 48,
+            ),
             const SizedBox(height: 12),
-            Text('Lỗi tải dữ liệu', style: const TextStyle(color: Colors.white, fontSize: 16)),
+            Text(
+              'Lỗi tải dữ liệu',
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
             const SizedBox(height: 6),
-            Text(_error!, style: const TextStyle(color: AppColors.textSubtle, fontSize: 13)),
+            Text(
+              _error!,
+              style: const TextStyle(color: AppColors.textSubtle, fontSize: 13),
+            ),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: _loadData,
@@ -616,12 +739,26 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                 color: AppColors.gold.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Ionicons.diamond_outline, color: AppColors.gold, size: 48),
+              child: const Icon(
+                Ionicons.diamond_outline,
+                color: AppColors.gold,
+                size: 48,
+              ),
             ),
             const SizedBox(height: 16),
-            const Text('Không có gói VIP nào', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text(
+              'Không có gói VIP nào',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 6),
-            const Text('Nhấn nút "+" để thêm gói mới', style: TextStyle(color: AppColors.textSubtle, fontSize: 13)),
+            const Text(
+              'Nhấn nút "+" để thêm gói mới',
+              style: TextStyle(color: AppColors.textSubtle, fontSize: 13),
+            ),
           ],
         ),
       );
@@ -630,7 +767,8 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
       itemCount: filtered.length,
-      itemBuilder: (context, index) => _buildPackageCard(filtered[index], index),
+      itemBuilder: (context, index) =>
+          _buildPackageCard(filtered[index], index),
     );
   }
 
@@ -644,10 +782,7 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.card,
-            AppColors.card.withValues(alpha: 0.75),
-          ],
+          colors: [AppColors.card, AppColors.card.withValues(alpha: 0.75)],
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
@@ -680,7 +815,9 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: isActive ? colors : [AppColors.textFaint, AppColors.textDim],
+                      colors: isActive
+                          ? colors
+                          : [AppColors.textFaint, AppColors.textDim],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: isActive
@@ -712,7 +849,9 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                             child: Text(
                               pkg.name,
                               style: TextStyle(
-                                color: isActive ? Colors.white : AppColors.textMuted,
+                                color: isActive
+                                    ? Colors.white
+                                    : AppColors.textMuted,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
@@ -741,7 +880,10 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                         const SizedBox(height: 6),
                         Text(
                           pkg.description,
-                          style: const TextStyle(color: AppColors.textSubtle, fontSize: 12),
+                          style: const TextStyle(
+                            color: AppColors.textSubtle,
+                            fontSize: 12,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -771,16 +913,26 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
                   onTap: () => _showPackageDialog(pkg),
                 ),
               ),
-              Container(width: 1, height: 22, color: AppColors.border.withValues(alpha: 0.5)),
+              Container(
+                width: 1,
+                height: 22,
+                color: AppColors.border.withValues(alpha: 0.5),
+              ),
               Expanded(
                 child: _buildActionBtn(
-                  icon: isActive ? Ionicons.eye_off_outline : Ionicons.eye_outline,
+                  icon: isActive
+                      ? Ionicons.eye_off_outline
+                      : Ionicons.eye_outline,
                   label: isActive ? 'Ẩn gói' : 'Hiện',
                   color: isActive ? Colors.orange : AppColors.online,
                   onTap: () => _toggleActive(pkg),
                 ),
               ),
-              Container(width: 1, height: 22, color: AppColors.border.withValues(alpha: 0.5)),
+              Container(
+                width: 1,
+                height: 22,
+                color: AppColors.border.withValues(alpha: 0.5),
+              ),
               Expanded(
                 child: _buildActionBtn(
                   icon: Ionicons.trash_outline,
@@ -827,7 +979,14 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
       children: [
         Icon(icon, size: 13, color: color),
         const SizedBox(width: 4),
-        Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
@@ -848,7 +1007,14 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
           children: [
             Icon(icon, size: 16, color: color),
             const SizedBox(width: 5),
-            Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
@@ -896,7 +1062,10 @@ class _AdminVipPackageScreenState extends State<AdminVipPackageScreen>
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.danger),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
       ),
     );
   }
