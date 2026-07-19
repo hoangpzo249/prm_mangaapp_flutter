@@ -1,14 +1,23 @@
+import 'package:flutter/foundation.dart';
 import '../../../core/networks/api_client.dart';
 import '../../application/services/api_provider.dart';
 import '../../application/services/storage_service.dart';
 import '../../domain/entities/app_user.dart';
 
 class AuthRepository {
-  AuthRepository._();
+  AuthRepository._({ApiClient? api, StorageService? storage})
+      : _api = api ?? ApiProvider.client,
+        _storage = storage ?? StorageService.instance;
+        
   static final AuthRepository instance = AuthRepository._();
 
-  final ApiClient _api = ApiProvider.client;
-  final StorageService _storage = StorageService.instance;
+  @visibleForTesting
+  factory AuthRepository.test({required ApiClient api, required StorageService storage}) {
+    return AuthRepository._(api: api, storage: storage);
+  }
+
+  final ApiClient _api;
+  final StorageService _storage;
 
   Future<AppUser> login(String username, String password) async {
     final res = await _api.post('/auth/login', body: {
