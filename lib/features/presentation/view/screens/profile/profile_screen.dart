@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../../app/routers/app_router.dart';
 import '../../../../../core/constants/app_colors.dart';
+import '../../../../application/services/storage_service.dart';
 import '../../../../data/repositories/auth_repository.dart';
 import '../../../../domain/entities/app_user.dart';
 
@@ -16,8 +17,10 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _auth = AuthRepository.instance;
+  final _storage = StorageService.instance;
   AppUser? _user;
   bool _loading = true;
+  String _readingMode = 'vertical';
 
   @override
   void initState() {
@@ -27,6 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _load() async {
     final localData = await _auth.getUserData();
+    final mode = await _storage.getReadingMode();
     if (!mounted) return;
     if (localData == null) {
       Navigator.pushReplacementNamed(context, AppRoutes.login);
@@ -34,6 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     setState(() {
       _user = localData;
+      _readingMode = mode;
       _loading = false;
     });
 
@@ -315,6 +320,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _load();
           }, border: true),
           _menuItem(Ionicons.bookmark_outline, 'Tủ truyện (Đang theo dõi)', () => Navigator.pushNamed(context, AppRoutes.bookmarks), border: true),
+          _menuItem(
+            Ionicons.book_outline,
+            'Chế độ đọc: ${_readingMode == 'horizontal' ? 'Ngang' : 'Dọc'}',
+            _showReadingModeModal,
+            border: true,
+          ),
           _menuItem(Ionicons.time_outline, 'Lịch sử đọc', () {
             Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (r) => false, arguments: {'tab': 2});
           }, border: true),
@@ -322,6 +333,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Navigator.pushNamed(context, AppRoutes.changePassword);
           }),
         ],
+      ),
+    );
+  }
+
+  void _showReadingModeModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Chọn chế độ đọc',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ListTile(
+              leading: const Icon(Ionicons.arrow_down_outline, color: Colors.white),
+              title: const Text('Cuộn dọc', style: TextStyle(color: Colors.white)),
+              trailing: _readingMode == 'vertical' ? const Icon(Ionicons.checkmark, color: AppColors.primary) : null,
+              onTap: () async {
+                await _storage.setReadingMode('vertical');
+                setState(() => _readingMode = 'vertical');
+                if (mounted) Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Ionicons.arrow_forward_outline, color: Colors.white),
+              title: const Text('Cuộn ngang', style: TextStyle(color: Colors.white)),
+              trailing: _readingMode == 'horizontal' ? const Icon(Ionicons.checkmark, color: AppColors.primary) : null,
+              onTap: () async {
+                await _storage.setReadingMode('horizontal');
+                setState(() => _readingMode = 'horizontal');
+                if (mounted) Navigator.pop(ctx);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

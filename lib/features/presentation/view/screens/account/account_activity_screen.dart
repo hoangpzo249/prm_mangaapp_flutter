@@ -95,7 +95,14 @@ class _AccountActivityScreenState extends State<AccountActivityScreen> {
           decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(12)),
           child: Row(
             children: [
-              Icon(tx.type == 'DEPOSIT' ? Ionicons.cash_outline : Ionicons.star_outline, color: AppColors.primary),
+              Icon(
+                tx.type == 'DEPOSIT'
+                    ? Ionicons.cash_outline
+                    : tx.type == 'REFUND_CHAPTER_HIDE'
+                        ? Ionicons.return_down_back_outline
+                        : Ionicons.star_outline,
+                color: AppColors.primary,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

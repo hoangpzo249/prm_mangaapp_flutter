@@ -156,6 +156,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Ionicons.book_outline;
       case 'REPLY_COMMENT':
         return Ionicons.chatbubble_outline;
+      case 'REFUND':
+        return Ionicons.wallet_outline;
       default:
         return Ionicons.information_circle_outline;
     }

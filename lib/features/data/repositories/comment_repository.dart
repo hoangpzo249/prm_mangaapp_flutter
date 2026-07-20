@@ -3,13 +3,22 @@ import '../../application/services/api_provider.dart';
 import '../../domain/entities/comment_item.dart';
 
 class CommentRepository {
-  CommentRepository._();
-  static final CommentRepository instance = CommentRepository._();
+  final ApiClient _api;
 
-  final ApiClient _api = ApiProvider.client;
+  CommentRepository({ApiClient? api})
+      : _api = api ?? ApiProvider.client;
 
-  Future<List<CommentItem>> getByStory(String storyId, {int page = 1, int limit = 20}) async {
-    final res = await _api.get('/comments/story/$storyId?page=$page&limit=$limit');
+  static final CommentRepository instance = CommentRepository();
+
+  Future<List<CommentItem>> getByStory(
+    String storyId, {
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final res = await _api.get(
+      '/comments/story/$storyId?page=$page&limit=$limit',
+    );
+
     return ApiClient.decodeList(res)
         .whereType<Map<String, dynamic>>()
         .map(CommentItem.fromJson)
@@ -26,15 +35,32 @@ class CommentRepository {
       'storyId': storyId,
       'content': content.trim(),
     };
-    if (chapterId != null && chapterId.isNotEmpty) body['chapterId'] = chapterId;
-    if (parentId != null && parentId.isNotEmpty) body['parentId'] = parentId;
 
-    final res = await _api.post('/comments', body: body, auth: true);
-    return CommentItem.fromJson(ApiClient.decodeMap(res));
+    if (chapterId != null && chapterId.isNotEmpty) {
+      body['chapterId'] = chapterId;
+    }
+
+    if (parentId != null && parentId.isNotEmpty) {
+      body['parentId'] = parentId;
+    }
+
+    final res = await _api.post(
+      '/comments',
+      body: body,
+      auth: true,
+    );
+
+    return CommentItem.fromJson(
+      ApiClient.decodeMap(res),
+    );
   }
 
   Future<void> deleteComment(String commentId) async {
-    final res = await _api.delete('/comments/$commentId', auth: true);
+    final res = await _api.delete(
+      '/comments/$commentId',
+      auth: true,
+    );
+
     ApiClient.decodeMap(res);
   }
 }

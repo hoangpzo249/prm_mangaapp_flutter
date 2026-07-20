@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../../../../app/routers/app_router.dart';
 import '../../../../../core/constants/app_colors.dart';
+import '../../../../domain/entities/genre.dart';
 import '../../../../domain/entities/story.dart';
 
 class StoryInfo extends StatefulWidget {
@@ -21,9 +23,7 @@ class _StoryInfoState extends State<StoryInfo> {
         ? widget.story.description!
         : 'No summary available for this story yet.';
 
-    final genres = widget.story.genres.isNotEmpty
-        ? widget.story.genres
-        : ['Not updated'];
+    final genres = widget.story.genres;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -82,26 +82,47 @@ class _StoryInfoState extends State<StoryInfo> {
           Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: [
-              for (final tag in genres)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.card,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Text(tag,
-                      style: const TextStyle(
-                          color: AppColors.textSubtle,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500)),
-                ),
-            ],
+            children: genres.isEmpty
+                ? [_genreChip(context, null)]
+                : [for (final g in genres) _genreChip(context, g)],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _genreChip(BuildContext context, Genre? genre) {
+    final label = genre?.name ?? 'Not updated';
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.textSubtle,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+
+    if (genre == null || genre.id.isEmpty) return chip;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: () {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.home,
+          (route) => false,
+          arguments: {'tab': 1, 'genreIds': [genre.id]},
+        );
+      },
+      child: chip,
     );
   }
 }

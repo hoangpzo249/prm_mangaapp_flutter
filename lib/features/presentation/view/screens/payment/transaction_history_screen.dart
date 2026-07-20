@@ -62,15 +62,15 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   itemCount: _transactions.length,
                   itemBuilder: (context, index) {
                     final tx = _transactions[index];
-                    final isDeposit = tx.type == 'DEPOSIT';
-                    final color = isDeposit ? Colors.green : Colors.red;
-                    final sign = isDeposit ? '+' : '';
+                    final isCoinIn = tx.amountCoins > 0;
+                    final color = isCoinIn ? Colors.green : Colors.red;
+                    final sign = isCoinIn ? '+' : '';
                     return Card(
                       color: AppColors.card,
                       margin: const EdgeInsets.only(bottom: 10),
                       child: ListTile(
                         leading: Icon(
-                          isDeposit ? Ionicons.arrow_down_circle : Ionicons.arrow_up_circle,
+                          isCoinIn ? Ionicons.arrow_down_circle : Ionicons.arrow_up_circle,
                           color: color,
                           size: 32,
                         ),
