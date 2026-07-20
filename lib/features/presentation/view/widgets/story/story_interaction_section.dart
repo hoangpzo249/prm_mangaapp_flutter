@@ -217,7 +217,6 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
                     ),
                     const SizedBox(height: 12),
                     ...reasons.map((item) {
-                      final selected = selectedReason == item;
                       return RadioListTile<String>(
                         dense: true,
                         title: Text(item, style: const TextStyle(color: Colors.white)),
@@ -414,7 +413,9 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
   }
 
   Widget _commentCard(CommentItem comment) {
-    final canDelete = _user?.role == 'admin' || (_user?.id != null && _user!.id == comment.userId);
+    final isOwnComment = _user?.id != null && _user!.id == comment.userId;
+    final canDelete = _user?.role == 'admin' || isOwnComment;
+    final canReport = !isOwnComment;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
@@ -449,11 +450,12 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
                 }),
                 child: const Text('Reply'),
               ),
-              TextButton.icon(
-                onPressed: () => _reportComment(comment),
-                icon: const Icon(Ionicons.flag_outline, size: 16),
-                label: const Text('Report'),
-              ),
+              if (canReport)
+                TextButton.icon(
+                  onPressed: () => _reportComment(comment),
+                  icon: const Icon(Ionicons.flag_outline, size: 16),
+                  label: const Text('Report'),
+                ),
               if (canDelete)
                 TextButton(
                   onPressed: () => _deleteComment(comment),
@@ -484,11 +486,12 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            TextButton.icon(
-                              onPressed: () => _reportComment(reply),
-                              icon: const Icon(Ionicons.flag_outline, size: 16),
-                              label: const Text('Report'),
-                            ),
+                            if (!isOwnComment)
+                              TextButton.icon(
+                                onPressed: () => _reportComment(reply),
+                                icon: const Icon(Ionicons.flag_outline, size: 16),
+                                label: const Text('Report'),
+                              ),
                             if (canDeleteReply)
                               TextButton(
                                 onPressed: () => _deleteComment(reply),

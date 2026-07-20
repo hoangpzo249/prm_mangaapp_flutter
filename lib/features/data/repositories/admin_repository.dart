@@ -62,10 +62,9 @@ class AdminRepository {
     }
   }
 
-  Future<void> resetPassword(String id, String newPassword) async {
+  Future<void> resetPassword(String id) async {
     final res = await _api.put(
       '/users/$id/reset-password',
-      body: {'newPassword': newPassword},
       auth: true,
     );
     if (res.statusCode < 200 || res.statusCode >= 300) {
