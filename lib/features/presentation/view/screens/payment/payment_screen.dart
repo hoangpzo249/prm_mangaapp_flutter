@@ -11,6 +11,7 @@ import '../../../../data/repositories/auth_repository.dart';
 import '../../../../data/repositories/payment_repository.dart';
 import '../../../../domain/entities/app_user.dart';
 import '../../../../domain/entities/vip_package.dart';
+import '../main_tabs.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -238,7 +239,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Ionicons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                final tabsScope = context.dependOnInheritedWidgetOfExactType<TabsScope>();
+                if (tabsScope != null) {
+                  tabsScope.goToTab(0);
+                }
+              }
+            },
           ),
           title: const Text(
             'Coins & VIP',

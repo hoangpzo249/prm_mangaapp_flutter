@@ -7,6 +7,7 @@ import '../../../../../core/constants/app_colors.dart';
 import '../../../../application/services/storage_service.dart';
 import '../../../../data/repositories/auth_repository.dart';
 import '../../../../domain/entities/app_user.dart';
+import '../main_tabs.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -199,7 +200,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.maybePop(context),
+            onTap: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                final tabsScope = context.dependOnInheritedWidgetOfExactType<TabsScope>();
+                if (tabsScope != null) {
+                  tabsScope.goToTab(0);
+                }
+              }
+            },
             child: const Padding(
               padding: EdgeInsets.all(5),
               child: Icon(Ionicons.arrow_back, size: 24, color: Colors.white),
