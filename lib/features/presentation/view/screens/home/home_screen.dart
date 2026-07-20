@@ -68,16 +68,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadData() async {
     setState(() => _loading = true);
-    final results = await Future.wait([
-      _stories.fetchHotStories(),
-      _stories.fetchRandomStories(),
-    ]);
-    if (!mounted) return;
-    setState(() {
-      _hotStories = results[0];
-      _randomStories = results[1];
-      _loading = false;
-    });
+    try {
+      final results = await Future.wait([
+        _stories.fetchHotStories(),
+        _stories.fetchRandomStories(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _hotStories = results[0];
+          _randomStories = results[1];
+        });
+      }
+    } catch (e) {
+      debugPrint('Lỗi loadData: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -89,6 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+
     if (_loading) {
       return const ColoredBox(
         color: AppColors.background,

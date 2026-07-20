@@ -1,12 +1,17 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/networks/api_client.dart';
 import '../../application/services/api_provider.dart';
 import '../../domain/entities/genre.dart';
 
 class GenreRepository {
-  GenreRepository._();
+  GenreRepository._() : _api = ApiProvider.client;
   static final GenreRepository instance = GenreRepository._();
 
-  final ApiClient _api = ApiProvider.client;
+  @visibleForTesting
+  GenreRepository.forTesting(this._api);
+
+  final ApiClient _api;
 
   Future<List<Genre>> fetchGenres() async {
     final res = await _api.get('/genres');
