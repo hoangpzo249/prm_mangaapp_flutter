@@ -2,11 +2,13 @@ import '../../../core/networks/api_client.dart';
 import '../../application/services/api_provider.dart';
 
 class ReportRepository {
-  ReportRepository._();
+  ReportRepository({ApiClient? api}) : _api = api ?? ApiProvider.client;
+
+  ReportRepository._() : this();
 
   static final ReportRepository instance = ReportRepository._();
 
-  final ApiClient _api = ApiProvider.client;
+  final ApiClient _api;
 
   Future<void> createReport(
     String targetType,
