@@ -118,8 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.pushNamedAndRemoveUntil(
-                context, AppRoutes.home, (r) => false),
+            onTap: () => Navigator.maybePop(context),
             child: const Padding(
               padding: EdgeInsets.only(right: 15),
               child: Icon(Ionicons.arrow_back, size: 24, color: Colors.white),

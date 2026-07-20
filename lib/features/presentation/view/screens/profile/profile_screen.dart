@@ -32,20 +32,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final localData = await _auth.getUserData();
     final mode = await _storage.getReadingMode();
     if (!mounted) return;
-    if (localData == null) {
-      Navigator.pushReplacementNamed(context, AppRoutes.login);
-      return;
-    }
     setState(() {
       _user = localData;
       _readingMode = mode;
       _loading = false;
     });
 
-    try {
-      final latest = await _auth.fetchMe();
-      if (mounted) setState(() => _user = latest);
-    } catch (_) {}
+    if (localData != null) {
+      try {
+        final latest = await _auth.fetchMe();
+        if (mounted) setState(() => _user = latest);
+      } catch (_) {}
+    }
   }
 
   Future<void> _logout() async {
@@ -95,6 +93,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: AppColors.background,
         body: Center(
           child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+
+    if (_user == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(30),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Ionicons.person_circle_outline, size: 80, color: AppColors.textSubtle),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Bạn chưa đăng nhập',
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Đăng nhập để truy cập tủ truyện, lịch sử và nhiều tính năng khác.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textSubtle, fontSize: 14),
+                  ),
+                  const SizedBox(height: 30),
+                  GestureDetector(
+                    onTap: () async {
+                      await Navigator.pushNamed(context, AppRoutes.login);
+                      _load();
+                    },
+                    child: Container(
+                      height: 55,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text('Đăng nhập',
+                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  GestureDetector(
+                    onTap: () async {
+                      await Navigator.pushNamed(context, AppRoutes.register);
+                      _load();
+                    },
+                    child: Container(
+                      height: 55,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primary),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text('Đăng ký',
+                          style: TextStyle(color: AppColors.primary, fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       );
     }
