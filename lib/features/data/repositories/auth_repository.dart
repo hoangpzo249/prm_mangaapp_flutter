@@ -33,13 +33,6 @@ class AuthRepository {
     return user;
   }
 
-  Future<void> sendRegisterOtp(String email) async {
-    final res = await _api.post('/auth/register/send-otp', body: {
-      'email': email,
-    });
-    ApiClient.decodeMap(res);
-  }
-
   Future<void> register(String username, String email, String password, String fullName) async {
     final res = await _api.post('/auth/register', body: {
       'username': username,
