@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/networks/api_client.dart';
 import '../../application/services/api_provider.dart';
 import '../../domain/entities/app_user.dart';
@@ -6,9 +8,11 @@ import '../../domain/entities/story.dart';
 
 class AdminRepository {
   AdminRepository._() : _api = ApiProvider.client;
-  static final AdminRepository instance = AdminRepository._();
 
+  @visibleForTesting
   AdminRepository.forTesting(this._api);
+
+  static final AdminRepository instance = AdminRepository._();
 
   final ApiClient _api;
 
@@ -84,10 +88,7 @@ class AdminRepository {
   Future<List<Story>> fetchStories() async {
     final res = await _api.get('/stories');
     final data = ApiClient.decodeList(res);
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(Story.fromJson)
-        .toList();
+    return data.whereType<Map<String, dynamic>>().map(Story.fromJson).toList();
   }
 
   Future<Story> fetchStoryById(String id) async {
@@ -136,10 +137,7 @@ class AdminRepository {
   Future<List<Story>> fetchHiddenStories() async {
     final res = await _api.get('/stories/admin/hidden', auth: true);
     final data = ApiClient.decodeList(res);
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(Story.fromJson)
-        .toList();
+    return data.whereType<Map<String, dynamic>>().map(Story.fromJson).toList();
   }
 
   // --- Chapter Management ---
@@ -171,13 +169,13 @@ class AdminRepository {
   }
 
   /// Soft delete: đánh dấu ẩn chapter (backend chỉ set isHidden=true)
-  Future<void> deleteChapter(String id) async {
+  Future<Map<String, dynamic>> deleteChapter(String id) async {
     final res = await _api.delete('/chapters/$id', auth: true);
+    final body = ApiClient.decodeMap(res);
     if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw Exception(
-        ApiClient.decodeMap(res)['message'] ?? 'Hide chapter failed',
-      );
+      throw Exception(body['message'] ?? 'Hide chapter failed');
     }
+    return body;
   }
 
   Future<void> restoreChapter(String id) async {
@@ -204,27 +202,23 @@ class AdminRepository {
   // --- Reports & Moderation ---
   Future<Map<String, dynamic>> fetchReports({
     String? status,
-    int? page,
-    int? limit,
+    int page = 1,
+    int limit = 20,
   }) async {
-    final query = <String>[];
-    if (status != null && status != 'all') query.add('status=$status');
-    if (page != null) query.add('page=$page');
-    if (limit != null) query.add('limit=$limit');
-    
-    final queryString = query.isNotEmpty ? '?${query.join('&')}' : '';
-    final res = await _api.get('/reports$queryString', auth: true);
+    var path = '/reports?page=$page&limit=$limit';
+    if (status != null && status != 'all') path += '&status=$status';
+    final res = await _api.get(path, auth: true);
     return ApiClient.decodeMap(res);
   }
 
-  Future<void> resolveReport(String id, String action, {String? adminNote}) async {
-    final body = <String, dynamic>{'action': action};
-    if (adminNote != null && adminNote.isNotEmpty) {
-      body['adminNote'] = adminNote;
-    }
+  Future<void> resolveReport(
+    String id,
+    String action, {
+    String adminNote = '',
+  }) async {
     final res = await _api.put(
       '/reports/$id/resolve',
-      body: body,
+      body: {'action': action, 'adminNote': adminNote},
       auth: true,
     );
     if (res.statusCode < 200 || res.statusCode >= 300) {

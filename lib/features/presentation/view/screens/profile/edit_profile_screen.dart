@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ionicons/ionicons.dart';
@@ -18,10 +21,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _auth = AuthRepository.instance;
   final _fullName = TextEditingController();
   final _picker = ImagePicker();
-  
+
   bool _loading = false;
   bool _uploadingAvatar = false;
   AppUser? _user;
+
+  // Local image picked
+  XFile? _pickedFile;
 
   @override
   void initState() {
@@ -39,13 +45,178 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
+  /// Hiển thị bottom sheet để chọn giữa ảnh local hoặc URL
+  Future<void> _showAvatarOptions() async {
+    if (_uploadingAvatar) return;
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 6),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.textSubtle,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'Chọn ảnh đại diện',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const Divider(color: AppColors.background, height: 1),
+            ListTile(
+              leading: const Icon(Ionicons.image_outline, color: AppColors.primary),
+              title: const Text('Chọn từ thư viện',
+                  style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImageFromGallery();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Ionicons.link_outline, color: AppColors.primary),
+              title: const Text('Nhập đường dẫn URL',
+                  style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImageFromUrl();
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Chọn ảnh từ máy (gallery)
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final file = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 512,
+        maxHeight: 512,
+      );
+      if (file == null) return;
+
+      // Web không hỗ trợ upload file trực tiếp qua API thông thường,
+      // vì vậy dùng bytes thay thế. Ở đây chúng ta lưu XFile để preview
+      // và gửi URL thông qua backend riêng nếu cần.
+      // Hiện tại: đọc bytes và encode base64 hoặc chỉ preview local.
+      // Để đơn giản: chỉ preview local và yêu cầu dùng URL cho web.
+      setState(() => _pickedFile = file);
+
+      if (kIsWeb) {
+        _alert('Thông báo',
+            'Trên web, vui lòng dùng đường dẫn URL để cập nhật ảnh đại diện.');
+        setState(() => _pickedFile = null);
+        return;
+      }
+
+      // Upload file local qua multipart hoặc chuyển sang URL nếu backend hỗ trợ
+      // Hiện tại backend chỉ nhận URL, nên thông báo cho user
+      _showConfirmUploadLocal(file);
+    } catch (e) {
+      _alert('Lỗi', 'Không thể chọn ảnh: ${e.toString()}');
+    }
+  }
+
+  /// Hiển thị dialog xác nhận upload local
+  Future<void> _showConfirmUploadLocal(XFile file) async {
+    // Đọc preview
+    setState(() {});
+    // Backend hiện tại chỉ hỗ trợ URL. Nếu backend có endpoint upload file,
+    // thay thế phần này bằng multipart upload.
+    // Tạm thời: yêu cầu người dùng nhập URL thủ công.
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: const Text('Xác nhận',
+            style: TextStyle(color: Colors.white)),
+        content: const Text(
+            'Backend hiện chỉ hỗ trợ URL ảnh. Bạn có muốn nhập URL thay thế không?',
+            style: TextStyle(color: AppColors.textLight)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy',
+                style: TextStyle(color: AppColors.textLight)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Nhập URL',
+                style: TextStyle(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      setState(() => _pickedFile = null);
+      _pickImageFromUrl();
+    } else {
+      setState(() => _pickedFile = null);
+    }
+  }
+
+  /// Nhập URL ảnh
+  Future<void> _pickImageFromUrl() async {
+    String tempUrl = '';
+    final bool? submit = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: const Text('Nhập đường dẫn ảnh',
+            style: TextStyle(color: Colors.white)),
+        content: TextField(
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'https://...',
+            hintStyle: TextStyle(color: AppColors.textSubtle),
+            enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primary)),
+            focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primary)),
+          ),
+          onChanged: (val) => tempUrl = val,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy',
+                style: TextStyle(color: AppColors.textLight)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Đồng ý',
+                style: TextStyle(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
+
+    if (submit == true && tempUrl.trim().isNotEmpty) {
       setState(() => _uploadingAvatar = true);
       try {
-        final bytes = await image.readAsBytes();
-        final updatedUser = await _auth.uploadAvatar(bytes, image.name);
+        final updatedUser =
+            await _auth.updateProfile(_fullName.text, avatarUrl: tempUrl.trim());
         setState(() => _user = updatedUser);
         _alert('Thành công', 'Cập nhật ảnh đại diện thành công.');
       } catch (e) {
@@ -167,75 +338,147 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Widget _avatarSection() {
     final avatarUrl = _user!.avatar;
-    return GestureDetector(
-      onTap: _uploadingAvatar ? null : _pickImage,
-      child: Stack(
-        alignment: Alignment.bottomRight,
-        children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: AppColors.card,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.primary, width: 2),
-            ),
-            child: ClipOval(
-              child: _uploadingAvatar
-                  ? const Center(
-                      child: CircularProgressIndicator(color: AppColors.primary))
-                  : (avatarUrl != null && avatarUrl.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: avatarUrl,
-                          fit: BoxFit.cover,
-                          errorWidget: (context, url, error) =>
-                              const Icon(Ionicons.person, size: 50, color: Colors.grey),
-                        )
-                      : const Icon(Ionicons.person, size: 50, color: Colors.grey)),
-            ),
-          ),
-          if (!_uploadingAvatar)
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: _uploadingAvatar ? null : _showAvatarOptions,
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.primary, width: 2),
+                ),
+                child: ClipOval(
+                  child: _uploadingAvatar
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                              color: AppColors.primary))
+                      : (avatarUrl != null && avatarUrl.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: avatarUrl,
+                              fit: BoxFit.cover,
+                              errorWidget: (context, url, error) =>
+                                  const Icon(Ionicons.person,
+                                      size: 50, color: Colors.grey),
+                            )
+                          : const Icon(Ionicons.person,
+                              size: 50, color: Colors.grey)),
+                ),
               ),
-              child: const Icon(Ionicons.camera, size: 18, color: Colors.white),
+              if (!_uploadingAvatar)
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child:
+                      const Icon(Ionicons.camera, size: 18, color: Colors.white),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Gợi ý cách chọn ảnh
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _avatarOptionChip(
+              icon: Ionicons.image_outline,
+              label: 'Thư viện',
+              onTap: _uploadingAvatar ? null : _pickImageFromGallery,
             ),
-        ],
+            const SizedBox(width: 10),
+            _avatarOptionChip(
+              icon: Ionicons.link_outline,
+              label: 'URL',
+              onTap: _uploadingAvatar ? null : _pickImageFromUrl,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _avatarOptionChip({
+    required IconData icon,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.primary.withOpacity(0.4), width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: AppColors.primary),
+            const SizedBox(width: 5),
+            Text(label,
+                style: const TextStyle(
+                    color: AppColors.textLight,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500)),
+          ],
+        ),
       ),
     );
   }
 
   Widget _input(TextEditingController c, String hint, IconData icon) {
-    return Container(
-      height: 55,
-      padding: const EdgeInsets.symmetric(horizontal: 15),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: AppColors.textSubtle),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: c,
-              cursorColor: AppColors.primary,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-              decoration: InputDecoration(
-                isCollapsed: true,
-                border: InputBorder.none,
-                hintText: hint,
-                hintStyle: const TextStyle(
-                    color: AppColors.textSubtle, fontSize: 16),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            hint,
+            style: const TextStyle(
+              color: AppColors.textLight,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
           ),
-        ],
-      ),
+        ),
+        Container(
+          height: 55,
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: AppColors.textSubtle),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: c,
+                  cursorColor: AppColors.primary,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  decoration: InputDecoration(
+                    isCollapsed: true,
+                    border: InputBorder.none,
+                    hintText: 'Nhập $hint',
+                    hintStyle: const TextStyle(
+                        color: AppColors.textSubtle, fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

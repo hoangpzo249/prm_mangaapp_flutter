@@ -1,14 +1,20 @@
+import 'package:flutter/foundation.dart';
 import '../../../core/networks/api_client.dart';
 import '../../application/services/api_provider.dart';
 import '../../application/services/storage_service.dart';
 import '../../domain/entities/app_user.dart';
 
 class AuthRepository {
-  AuthRepository._() : _api = ApiProvider.client, _storage = StorageService.instance;
+  AuthRepository._({ApiClient? api, StorageService? storage})
+      : _api = api ?? ApiProvider.client,
+        _storage = storage ?? StorageService.instance;
+        
   static final AuthRepository instance = AuthRepository._();
 
-  AuthRepository.test({required ApiClient api, required StorageService storage}) 
-      : _api = api, _storage = storage;
+  @visibleForTesting
+  factory AuthRepository.test({required ApiClient api, required StorageService storage}) {
+    return AuthRepository._(api: api, storage: storage);
+  }
 
   final ApiClient _api;
   final StorageService _storage;
@@ -27,13 +33,6 @@ class AuthRepository {
     return user;
   }
 
-  Future<void> sendRegisterOtp(String email) async {
-    final res = await _api.post('/auth/register/send-otp', body: {
-      'email': email,
-    });
-    ApiClient.decodeMap(res);
-  }
-
   Future<void> register(String username, String email, String password, String fullName) async {
     final res = await _api.post('/auth/register', body: {
       'username': username,
@@ -41,9 +40,7 @@ class AuthRepository {
       'password': password,
       'fullName': fullName,
     });
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      ApiClient.decodeMap(res);
-    }
+    ApiClient.decodeMap(res); // throws ApiException (with fieldErrors) on non-2xx
   }
 
   Future<void> changePassword(String oldPassword, String newPassword) async {
@@ -78,16 +75,12 @@ class AuthRepository {
     return user;
   }
 
-  Future<AppUser> updateProfile(String fullName) async {
-    final res = await _api.put('/users/me', body: {'fullName': fullName}, auth: true);
-    final data = ApiClient.decodeMap(res);
-    final user = AppUser.fromJson(data['user'] as Map<String, dynamic>);
-    await _storage.setUserInfo(user);
-    return user;
-  }
-
-  Future<AppUser> uploadAvatar(List<int> fileBytes, String fileName) async {
-    final res = await _api.multipartPost('/users/me/avatar', fileBytes, fileName, 'avatar', auth: true);
+  Future<AppUser> updateProfile(String fullName, {String? avatarUrl}) async {
+    final body = <String, dynamic>{'fullName': fullName};
+    if (avatarUrl != null) {
+      body['avatar'] = avatarUrl;
+    }
+    final res = await _api.put('/users/me', body: body, auth: true);
     final data = ApiClient.decodeMap(res);
     final user = AppUser.fromJson(data['user'] as Map<String, dynamic>);
     await _storage.setUserInfo(user);

@@ -190,10 +190,7 @@ class _AdminChapterFormScreenState extends State<AdminChapterFormScreen> {
             ),
             Text(
               widget.storyTitle,
-              style: const TextStyle(
-                color: AppColors.textSubtle,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: AppColors.textSubtle, fontSize: 12),
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -331,11 +328,7 @@ class _AdminChapterFormScreenState extends State<AdminChapterFormScreen> {
         child: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Ionicons.image_outline,
-              color: AppColors.textSubtle,
-              size: 28,
-            ),
+            Icon(Ionicons.image_outline, color: AppColors.textSubtle, size: 28),
             SizedBox(height: 6),
             Text(
               'Chưa có ảnh để xem trước',
@@ -359,10 +352,7 @@ class _AdminChapterFormScreenState extends State<AdminChapterFormScreen> {
             const SizedBox(width: 6),
             Text(
               'Xem trước (${urls.length} trang)',
-              style: const TextStyle(
-                color: AppColors.textSubtle,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: AppColors.textSubtle, fontSize: 12),
             ),
           ],
         ),

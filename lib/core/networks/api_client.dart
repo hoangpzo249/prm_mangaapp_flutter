@@ -8,12 +8,12 @@ typedef TokenProvider = Future<String?> Function();
 /// Thin HTTP client centralizing base URL, JSON encoding/decoding and auth
 /// header injection. Repositories layer their business logic on top of this.
 class ApiClient {
-  ApiClient({required this.baseUrl, this.tokenProvider, http.Client? httpClient}) 
-      : _httpClient = httpClient ?? http.Client();
+  ApiClient({required this.baseUrl, this.tokenProvider, http.Client? httpClient})
+      : _client = httpClient ?? http.Client();
 
   final String baseUrl;
   final TokenProvider? tokenProvider;
-  final http.Client _httpClient;
+  final http.Client _client;
 
   Future<Map<String, String>> _headers({bool json = true, bool auth = false}) async {
     final headers = <String, String>{};
@@ -26,11 +26,11 @@ class ApiClient {
   }
 
   Future<http.Response> get(String path, {bool auth = false}) async {
-    return _httpClient.get(Uri.parse('$baseUrl$path'), headers: await _headers(auth: auth));
+    return _client.get(Uri.parse('$baseUrl$path'), headers: await _headers(auth: auth));
   }
 
   Future<http.Response> post(String path, {Object? body, bool auth = false}) async {
-    return _httpClient.post(
+    return _client.post(
       Uri.parse('$baseUrl$path'),
       headers: await _headers(auth: auth),
       body: body == null ? null : jsonEncode(body),
@@ -38,7 +38,7 @@ class ApiClient {
   }
 
   Future<http.Response> put(String path, {Object? body, bool auth = false}) async {
-    return _httpClient.put(
+    return _client.put(
       Uri.parse('$baseUrl$path'),
       headers: await _headers(auth: auth),
       body: body == null ? null : jsonEncode(body),
@@ -46,7 +46,7 @@ class ApiClient {
   }
 
   Future<http.Response> delete(String path, {bool auth = false}) async {
-    return _httpClient.delete(Uri.parse('$baseUrl$path'), headers: await _headers(auth: auth));
+    return _client.delete(Uri.parse('$baseUrl$path'), headers: await _headers(auth: auth));
   }
 
   Future<http.Response> multipartPost(String path, List<int> fileBytes, String fileName, String fieldName, {bool auth = false}) async {
@@ -55,20 +55,33 @@ class ApiClient {
     final headers = await _headers(auth: auth, json: false);
     request.headers.addAll(headers);
     request.files.add(http.MultipartFile.fromBytes(fieldName, fileBytes, filename: fileName));
-    final streamedResponse = await _httpClient.send(request);
+    final streamedResponse = await _client.send(request);
     return http.Response.fromStream(streamedResponse);
   }
 
   /// Decode JSON body, throwing [ApiException] on non-2xx status.
+  /// If the backend returns per-field validation errors (list under key "errors"),
+  /// they are parsed into [ApiException.fieldErrors] keyed by field name.
   static Map<String, dynamic> decodeMap(http.Response res) {
     final dynamic decoded = res.body.isEmpty ? <String, dynamic>{} : jsonDecode(res.body);
     final data = decoded is Map<String, dynamic>
         ? decoded
         : <String, dynamic>{'data': decoded};
     if (res.statusCode < 200 || res.statusCode >= 300) {
+      // Parse per-field errors returned by backend validator middleware
+      final Map<String, String> fieldErrors = {};
+      final rawErrors = data['errors'];
+      if (rawErrors is List) {
+        for (final e in rawErrors) {
+          if (e is Map && e['field'] != null && e['message'] != null) {
+            fieldErrors[e['field'].toString()] = e['message'].toString();
+          }
+        }
+      }
       throw ApiException(
         (data['message'] ?? 'Request failed').toString(),
         status: res.statusCode,
+        fieldErrors: fieldErrors.isNotEmpty ? fieldErrors : null,
       );
     }
     return data;

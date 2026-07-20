@@ -7,6 +7,7 @@ import '../../../../../core/constants/app_colors.dart';
 import '../../../../data/repositories/auth_repository.dart';
 import '../../../../data/repositories/comment_repository.dart';
 import '../../../../data/repositories/rating_repository.dart';
+import '../../../../data/repositories/report_repository.dart';
 import '../../../../domain/entities/app_user.dart';
 import '../../../../domain/entities/comment_item.dart';
 import '../../../../domain/entities/rating_summary.dart';
@@ -35,6 +36,7 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
   final _commentsRepo = CommentRepository.instance;
   final _ratingsRepo = RatingRepository.instance;
   final _authRepo = AuthRepository.instance;
+  final _reportRepo = ReportRepository.instance;
   final _commentController = TextEditingController();
 
   List<CommentItem> _comments = [];
@@ -178,6 +180,104 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
       _show('Comment deleted');
     } catch (error) {
       _show('Failed to delete comment: $error');
+    }
+  }
+
+  Future<void> _reportComment(CommentItem comment) async {
+    if (!await _ensureLoggedIn()) return;
+
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        final controller = TextEditingController();
+        final reasons = <String>[
+          'Spam or misleading content',
+          'Violence or offensive content',
+          'Inappropriate content',
+          'Copyright violation',
+          'Other',
+        ];
+
+        String? selectedReason;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final showCustomReason = selectedReason == 'Other';
+            return AlertDialog(
+              backgroundColor: AppColors.card,
+              title: const Text('Report comment', style: TextStyle(color: Colors.white)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Select a reason for reporting this comment.',
+                      style: TextStyle(color: AppColors.textLight),
+                    ),
+                    const SizedBox(height: 12),
+                    ...reasons.map((item) {
+                      final selected = selectedReason == item;
+                      return RadioListTile<String>(
+                        dense: true,
+                        title: Text(item, style: const TextStyle(color: Colors.white)),
+                        value: item,
+                        groupValue: selectedReason,
+                        activeColor: AppColors.primary,
+                        onChanged: (value) => setDialogState(() => selectedReason = value),
+                      );
+                    }),
+                    if (showCustomReason) ...[
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: controller,
+                        minLines: 2,
+                        maxLines: 4,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Describe the issue...',
+                          hintStyle: const TextStyle(color: AppColors.textDim),
+                          filled: true,
+                          fillColor: AppColors.background,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, null),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final finalReason = (selectedReason == 'Other'
+                            ? controller.text.trim()
+                            : selectedReason ?? '')
+                        .trim();
+                    Navigator.pop(dialogContext, finalReason);
+                  },
+                  child: const Text('Submit', style: TextStyle(color: AppColors.danger)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (reason == null || reason.trim().isEmpty) return;
+
+    try {
+      await _reportRepo.reportComment(comment.id, reason.trim());
+      _show('Report submitted successfully');
+    } catch (error) {
+      _show('Failed to submit report: $error');
     }
   }
 
@@ -349,6 +449,11 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
                 }),
                 child: const Text('Reply'),
               ),
+              TextButton.icon(
+                onPressed: () => _reportComment(comment),
+                icon: const Icon(Ionicons.flag_outline, size: 16),
+                label: const Text('Report'),
+              ),
               if (canDelete)
                 TextButton(
                   onPressed: () => _deleteComment(comment),
@@ -376,14 +481,21 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
                         Text(reply.displayName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 4),
                         Text(reply.content, style: const TextStyle(color: AppColors.textLight)),
-                        if (canDeleteReply)
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () => _deleteComment(reply),
-                              child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton.icon(
+                              onPressed: () => _reportComment(reply),
+                              icon: const Icon(Ionicons.flag_outline, size: 16),
+                              label: const Text('Report'),
                             ),
-                          ),
+                            if (canDeleteReply)
+                              TextButton(
+                                onPressed: () => _deleteComment(reply),
+                                child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                   );

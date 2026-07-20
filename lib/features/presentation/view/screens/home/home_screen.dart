@@ -4,6 +4,7 @@ import 'package:ionicons/ionicons.dart';
 import '../../../../../app/routers/app_router.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../data/repositories/auth_repository.dart';
+import '../../../../data/repositories/notification_repository.dart';
 import '../../../../data/repositories/story_repository.dart';
 import '../../../../domain/entities/app_user.dart';
 import '../../../../domain/entities/story.dart';
@@ -22,16 +23,17 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _stories = StoryRepository.instance;
   final _auth = AuthRepository.instance;
+  final _notifications = NotificationRepository.instance;
   final _scroll = ScrollController();
 
   List<Story> _hotStories = [];
   List<Story> _randomStories = [];
   bool _loading = true;
   AppUser? _user;
+  int _unreadCount = 0;
   double _headerOffset = 0;
 
-  double _paddingTop = 0;
-  double get _headerHeight => 60 + _paddingTop;
+  double get _headerHeight => 60 + MediaQuery.paddingOf(context).top;
 
   @override
   void initState() {
@@ -47,12 +49,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _checkUser() async {
-    try {
-      final u = await _auth.getUserData();
-      if (mounted) setState(() => _user = u);
-    } catch (e) {
-      debugPrint('Lỗi checkUser: $e');
+    final u = await _auth.getUserData();
+    if (mounted) setState(() => _user = u);
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    if (_user == null) {
+      if (_unreadCount != 0 && mounted) setState(() => _unreadCount = 0);
+      return;
     }
+    try {
+      final res = await _notifications.getNotifications(limit: 1);
+      if (!mounted) return;
+      setState(() => _unreadCount = res.unreadCount);
+    } catch (_) {}
   }
 
   Future<void> _loadData() async {
@@ -84,7 +95,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _paddingTop = MediaQuery.of(context).padding.top;
 
     if (_loading) {
       return const ColoredBox(
@@ -140,6 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           size: 24, color: AppColors.gold),
                       () => Navigator.pushNamed(context, AppRoutes.payment),
                     ),
+                  if (_user != null) _bellButton(),
                   _iconBtn(
                     const Icon(Ionicons.bookmark_outline,
                         size: 24, color: Colors.white),
@@ -163,6 +174,51 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: onTap,
         child: Padding(padding: const EdgeInsets.all(5), child: child),
       ),
+    );
+  }
+
+  Widget _bellButton() {
+    final count = _unreadCount;
+    final label = count > 99 ? '99+' : '$count';
+    return _iconBtn(
+      Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(Ionicons.notifications_outline,
+              size: 24, color: Colors.white),
+          if (count > 0)
+            Positioned(
+              right: -6,
+              top: -4,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: count > 9 ? 5 : 4,
+                  vertical: 1,
+                ),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.danger,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.surface, width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    height: 1.1,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+      () async {
+        await Navigator.pushNamed(context, AppRoutes.notifications);
+        _loadUnreadCount();
+      },
     );
   }
 

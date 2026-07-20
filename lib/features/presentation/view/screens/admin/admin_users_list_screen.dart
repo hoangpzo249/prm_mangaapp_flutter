@@ -260,10 +260,7 @@ class _AdminUsersListScreenState extends State<AdminUsersListScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.card,
-            AppColors.card.withValues(alpha: 0.75),
-          ],
+          colors: [AppColors.card, AppColors.card.withValues(alpha: 0.75)],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor, width: 1),
@@ -454,11 +451,7 @@ class _AdminUsersListScreenState extends State<AdminUsersListScreen> {
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.card, width: 2),
               ),
-              child: const Icon(
-                Ionicons.star,
-                color: Colors.white,
-                size: 10,
-              ),
+              child: const Icon(Ionicons.star, color: Colors.white, size: 10),
             ),
           ),
       ],

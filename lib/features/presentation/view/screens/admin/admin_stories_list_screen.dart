@@ -90,10 +90,7 @@ class _AdminStoriesListScreenState extends State<AdminStoriesListScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text(
-          'Ẩn truyện',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Ẩn truyện', style: TextStyle(color: Colors.white)),
         content: Text(
           'Ẩn truyện "${story.title}"? Truyện và tất cả chapter sẽ '
           'không còn hiển thị cho người đọc. Bạn có thể khôi phục lại '
@@ -110,10 +107,7 @@ class _AdminStoriesListScreenState extends State<AdminStoriesListScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'Ẩn',
-              style: TextStyle(color: AppColors.danger),
-            ),
+            child: const Text('Ẩn', style: TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -123,12 +117,16 @@ class _AdminStoriesListScreenState extends State<AdminStoriesListScreen> {
 
     try {
       await _adminRepo.deleteStory(story.id);
+
+      if (!mounted) return;
+
       _snack('Đã ẩn truyện "${story.title}"');
-      _loadStories();
+      await _loadStories();
     } catch (e) {
-      _snack(
-        'Ẩn thất bại: ${e.toString().replaceFirst('Exception: ', '')}',
-      );
+      if (!mounted) return;
+
+      final message = e.toString().replaceFirst('Exception: ', '');
+      _snack('Ẩn thất bại: $message');
     }
   }
 
@@ -381,10 +379,7 @@ class _AdminStoriesListScreenState extends State<AdminStoriesListScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.card,
-            AppColors.card.withValues(alpha: 0.75),
-          ],
+          colors: [AppColors.card, AppColors.card.withValues(alpha: 0.75)],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border, width: 1),
@@ -572,12 +567,16 @@ class _AdminStoriesListScreenState extends State<AdminStoriesListScreen> {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      statusText,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
+                    Flexible(
+                      child: Text(
+                        statusText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],

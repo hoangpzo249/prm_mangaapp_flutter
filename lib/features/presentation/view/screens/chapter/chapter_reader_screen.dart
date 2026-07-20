@@ -30,6 +30,7 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
   List<Chapter> _allChapters = [];
   bool _loading = true;
   bool _showControls = true;
+  String _readingMode = 'vertical';
 
   static const _controlBg = Color(0xF20F172A);
 
@@ -40,7 +41,11 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    final mode = await _storage.getReadingMode();
+    if (mounted) setState(() {
+      _loading = true;
+      _readingMode = mode;
+    });
     try {
       final data = await _chapters.fetchChapterContent(widget.chapterId);
       _chapter = data;
@@ -183,25 +188,54 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
 
   Widget _content() {
     final content = _chapter!.content;
+    if (content.isEmpty) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _showControls = !_showControls),
+        child: const Padding(
+          padding: EdgeInsets.only(top: 50),
+          child: Text('Content has not been updated yet...',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: AppColors.textLight)),
+        ),
+      );
+    }
+
+    Widget scrollable;
+    if (_readingMode == 'horizontal') {
+      scrollable = PageView.builder(
+        itemCount: content.length + 1,
+        itemBuilder: (_, i) {
+          if (i == content.length) return _endOfChapter();
+          return Center(
+            child: InteractiveViewer(
+              minScale: 1.0,
+              maxScale: 4.0,
+              child: _AutoHeightImage(url: content[i]),
+            ),
+          );
+        },
+      );
+    } else {
+      scrollable = ListView.builder(
+        physics: const ClampingScrollPhysics(),
+        padding: EdgeInsets.zero,
+        itemCount: content.length + 1,
+        itemBuilder: (_, i) {
+          if (i == content.length) return _endOfChapter();
+          return InteractiveViewer(
+            minScale: 1.0,
+            maxScale: 4.0,
+            child: _AutoHeightImage(url: content[i]),
+          );
+        },
+      );
+    }
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => setState(() => _showControls = !_showControls),
-      child: content.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.only(top: 50),
-              child: Text('Content has not been updated yet...',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: AppColors.textLight)),
-            )
-          : ListView.builder(
-              physics: const ClampingScrollPhysics(),
-              padding: EdgeInsets.zero,
-              itemCount: content.length + 1,
-              itemBuilder: (_, i) {
-                if (i == content.length) return _endOfChapter();
-                return _AutoHeightImage(url: content[i]);
-              },
-            ),
+      child: scrollable,
     );
   }
 
@@ -314,7 +348,60 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                 ],
               ),
             ),
-            const SizedBox(width: 40),
+            GestureDetector(
+              onTap: _showSettingsModal,
+              child: const Padding(
+                padding: EdgeInsets.all(8),
+                child: Icon(Ionicons.settings_outline, size: 24, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSettingsModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Cài đặt đọc',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ListTile(
+              leading: const Icon(Ionicons.arrow_down_outline, color: Colors.white),
+              title: const Text('Cuộn dọc', style: TextStyle(color: Colors.white)),
+              trailing: _readingMode == 'vertical' ? const Icon(Ionicons.checkmark, color: AppColors.primary) : null,
+              onTap: () {
+                setState(() => _readingMode = 'vertical');
+                _storage.setReadingMode('vertical');
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Ionicons.arrow_forward_outline, color: Colors.white),
+              title: const Text('Cuộn ngang', style: TextStyle(color: Colors.white)),
+              trailing: _readingMode == 'horizontal' ? const Icon(Ionicons.checkmark, color: AppColors.primary) : null,
+              onTap: () {
+                setState(() => _readingMode = 'horizontal');
+                _storage.setReadingMode('horizontal');
+                Navigator.pop(ctx);
+              },
+            ),
           ],
         ),
       ),
@@ -682,7 +769,7 @@ class _AutoHeightImageState extends State<_AutoHeightImage> {
         imageUrl: widget.url,
         width: width,
         height: height,
-        fit: BoxFit.fill,
+        fit: BoxFit.fitWidth,
         placeholder: (_, _) => const ColoredBox(color: Colors.black),
         errorWidget: (_, _, _) => const ColoredBox(color: Colors.black),
       ),
