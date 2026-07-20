@@ -32,7 +32,7 @@ void main() {
   });
 
   group('ReportRepository Tests', () {
-    test('reportStory gửi payload đã trim và auth=true', () async {
+    test('report story gửi payload đã trim và auth=true', () async {
       // Arrange
       when(
         () => mockApi.post(
@@ -62,7 +62,7 @@ void main() {
       expect(body['reason'], 'Truyện có hình ảnh nhạy cảm');
     });
 
-    test('reportComment gửi payload đã trim và auth=true', () async {
+    test('report comment gửi payload đã trim và auth=true', () async {
       // Arrange
       when(
         () => mockApi.post(
@@ -95,7 +95,7 @@ void main() {
       expect(body['reason'], 'Bình luận spam');
     });
 
-    test('createReport với targetType rỗng hoặc thiếu dữ liệu thì ném exception', () async {
+    test('create report với targetType rỗng hoặc thiếu dữ liệu thì ném exception', () async {
       // Act & Assert
       await expectLater(
         () => reportRepository.createReport('  ', '   ', '   '),
@@ -109,7 +109,7 @@ void main() {
       );
     });
 
-    test('createReport với targetType không hợp lệ thì ném exception', () async {
+    test('create report với targetType không hợp lệ thì ném exception', () async {
       // Act & Assert
       await expectLater(
         () => reportRepository.createReport('user', 'story-123', 'spam'),
@@ -123,7 +123,7 @@ void main() {
       );
     });
 
-    test('createReport khi backend trả lỗi thì ném message từ backend', () async {
+    test('create report khi backend trả lỗi thì ném message từ backend', () async {
       // Arrange
       when(
         () => mockApi.post(
@@ -151,7 +151,7 @@ void main() {
       );
     });
 
-    test('createReport với statusCode 200 không ném exception', () async {
+    test('create report với statusCode 200 không ném exception', () async {
       // Arrange
       when(
         () => mockApi.post(
