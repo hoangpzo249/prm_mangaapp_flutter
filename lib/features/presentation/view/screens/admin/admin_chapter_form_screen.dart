@@ -114,6 +114,12 @@ class _AdminChapterFormScreenState extends State<AdminChapterFormScreen> {
       final title = _chapterTitleController.text.trim();
       final images = _parseImages(_imagesController.text);
 
+      if (!_isEditing && images.length < 2) {
+        _snack('Chương phải có ít nhất 2 ảnh');
+        setState(() => _saving = false);
+        return;
+      }
+
       if (_isEditing) {
         final chapterId = widget.chapter?.id;
 
