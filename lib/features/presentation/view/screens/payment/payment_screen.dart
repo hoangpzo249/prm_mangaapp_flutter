@@ -7,10 +7,12 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../../../core/constants/app_colors.dart';
+import '../../../../application/services/storage_service.dart';
 import '../../../../data/repositories/auth_repository.dart';
 import '../../../../data/repositories/payment_repository.dart';
 import '../../../../domain/entities/app_user.dart';
 import '../../../../domain/entities/vip_package.dart';
+import '../main_tabs.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -90,6 +92,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Future<void> _loadData() async {
     setState(() => _loading = true);
     try {
+      // Guest mode: skip auth-required API calls when no token
+      final token = await StorageService.instance.getToken();
+      if (token == null) {
+        if (mounted) {
+          setState(() {
+            _user = null;
+            _packages = [];
+            _loading = false;
+          });
+        }
+        return;
+      }
       final user = await _auth.fetchMe();
       final packages = await _payment.getPackages();
       if (mounted) {
@@ -238,7 +252,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Ionicons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                final tabsScope = context.dependOnInheritedWidgetOfExactType<TabsScope>();
+                if (tabsScope != null) {
+                  tabsScope.goToTab(0);
+                }
+              }
+            },
           ),
           title: const Text(
             'Coins & VIP',

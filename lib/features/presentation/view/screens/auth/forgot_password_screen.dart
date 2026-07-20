@@ -19,6 +19,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   bool _loading = false;
   bool _isOtpSent = false;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
 
   Future<void> _sendOtp() async {
     if (_email.text.trim().isEmpty) {
@@ -124,9 +126,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         const SizedBox(height: 15),
                         _input(_otp, 'Mã OTP', Ionicons.key_outline),
                         const SizedBox(height: 15),
-                        _input(_newPassword, 'Mật khẩu mới', Ionicons.lock_closed_outline, obscure: true),
+                        _passwordInput(_newPassword, 'Mật khẩu mới', Ionicons.lock_closed_outline, _obscureNew, () {
+                          setState(() => _obscureNew = !_obscureNew);
+                        }),
                         const SizedBox(height: 15),
-                        _input(_confirmPassword, 'Xác nhận mật khẩu mới', Ionicons.lock_closed_outline, obscure: true),
+                        _passwordInput(_confirmPassword, 'Xác nhận mật khẩu mới', Ionicons.lock_closed_outline, _obscureConfirm, () {
+                          setState(() => _obscureConfirm = !_obscureConfirm);
+                        }),
                       ],
                       
                       const SizedBox(height: 30),
@@ -153,7 +159,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _input(TextEditingController c, String hint, IconData icon, {bool obscure = false, bool enabled = true}) {
+  Widget _input(TextEditingController c, String hint, IconData icon, {bool enabled = true}) {
     return Container(
       height: 55,
       padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -168,7 +174,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           Expanded(
             child: TextField(
               controller: c,
-              obscureText: obscure,
               enabled: enabled,
               cursorColor: AppColors.primary,
               style: TextStyle(color: enabled ? Colors.white : Colors.grey, fontSize: 16),
@@ -178,6 +183,49 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 hintText: hint,
                 hintStyle: const TextStyle(color: AppColors.textSubtle, fontSize: 16),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _passwordInput(TextEditingController c, String hint, IconData icon,
+      bool obscure, VoidCallback onToggle) {
+    return Container(
+      height: 55,
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.textSubtle),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: c,
+              obscureText: obscure,
+              autocorrect: false,
+              enableSuggestions: false,
+              textCapitalization: TextCapitalization.none,
+              cursorColor: AppColors.primary,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              decoration: InputDecoration(
+                isCollapsed: true,
+                border: InputBorder.none,
+                hintText: hint,
+                hintStyle: const TextStyle(color: AppColors.textSubtle, fontSize: 16),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onToggle,
+            child: Icon(
+              obscure ? Ionicons.eye_off_outline : Ionicons.eye_outline,
+              size: 20,
+              color: AppColors.textSubtle,
             ),
           ),
         ],
