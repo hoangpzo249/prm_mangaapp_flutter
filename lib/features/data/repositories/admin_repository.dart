@@ -5,10 +5,12 @@ import '../../domain/entities/chapter.dart';
 import '../../domain/entities/story.dart';
 
 class AdminRepository {
-  AdminRepository._();
+  AdminRepository._() : _api = ApiProvider.client;
   static final AdminRepository instance = AdminRepository._();
 
-  final ApiClient _api = ApiProvider.client;
+  AdminRepository.forTesting(this._api);
+
+  final ApiClient _api;
 
   // --- Statistics ---
   Future<Map<String, dynamic>> fetchOverview() async {
@@ -200,16 +202,29 @@ class AdminRepository {
   }
 
   // --- Reports & Moderation ---
-  Future<List<Map<String, dynamic>>> fetchReports() async {
-    final res = await _api.get('/reports', auth: true);
-    final data = ApiClient.decodeList(res);
-    return data.cast<Map<String, dynamic>>();
+  Future<Map<String, dynamic>> fetchReports({
+    String? status,
+    int? page,
+    int? limit,
+  }) async {
+    final query = <String>[];
+    if (status != null && status != 'all') query.add('status=$status');
+    if (page != null) query.add('page=$page');
+    if (limit != null) query.add('limit=$limit');
+    
+    final queryString = query.isNotEmpty ? '?${query.join('&')}' : '';
+    final res = await _api.get('/reports$queryString', auth: true);
+    return ApiClient.decodeMap(res);
   }
 
-  Future<void> resolveReport(String id, String action) async {
+  Future<void> resolveReport(String id, String action, {String? adminNote}) async {
+    final body = <String, dynamic>{'action': action};
+    if (adminNote != null && adminNote.isNotEmpty) {
+      body['adminNote'] = adminNote;
+    }
     final res = await _api.put(
       '/reports/$id/resolve',
-      body: {'action': action},
+      body: body,
       auth: true,
     );
     if (res.statusCode < 200 || res.statusCode >= 300) {

@@ -30,7 +30,8 @@ class _HomeScreenState extends State<HomeScreen> {
   AppUser? _user;
   double _headerOffset = 0;
 
-  double get _headerHeight => 60;
+  double _paddingTop = 0;
+  double get _headerHeight => 60 + _paddingTop;
 
   @override
   void initState() {
@@ -73,6 +74,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _paddingTop = MediaQuery.of(context).padding.top;
+
     if (_loading) {
       return const ColoredBox(
         color: AppColors.background,
