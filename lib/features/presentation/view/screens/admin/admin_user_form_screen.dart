@@ -57,28 +57,7 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
     super.dispose();
   }
 
-  Future<void> _extendVip(int days) async {
-    final now = DateTime.now();
-    final base = (_vipUntil != null && _vipUntil!.isAfter(now))
-        ? _vipUntil!
-        : now;
-    setState(() {
-      _vipUntil = base.add(Duration(days: days));
-    });
-    _snack('Đã cộng thêm $days ngày VIP (Chưa lưu thay đổi)');
-  }
-
-  Future<void> _clearVip() async {
-    setState(() {
-      _vipUntil = null;
-    });
-    _snack('Đã xóa thời hạn VIP (Chưa lưu thay đổi)');
-  }
-
   Future<void> _showResetPasswordDialog() async {
-    final passC = TextEditingController();
-    final localKey = GlobalKey<FormState>();
-
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -87,26 +66,9 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
           'Reset Mật Khẩu',
           style: TextStyle(color: Colors.white),
         ),
-        content: Form(
-          key: localKey,
-          child: TextFormField(
-            controller: passC,
-            obscureText: true,
-            style: const TextStyle(color: Colors.white),
-            cursorColor: AppColors.primary,
-            decoration: const InputDecoration(
-              labelText: 'Mật khẩu mới (Tối thiểu 6 ký tự)',
-              labelStyle: TextStyle(color: AppColors.textSubtle),
-              focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: AppColors.primary),
-              ),
-            ),
-            validator: (val) {
-              if (val == null || val.length < 6)
-                return 'Mật khẩu phải từ 6 ký tự';
-              return null;
-            },
-          ),
+        content: const Text(
+          'Hệ thống sẽ tạo một mật khẩu mới ngẫu nhiên và gửi qua email cho người dùng này.',
+          style: TextStyle(color: AppColors.textLight),
         ),
         actions: [
           TextButton(
@@ -117,13 +79,9 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {
-              if (localKey.currentState?.validate() == true) {
-                Navigator.pop(ctx, true);
-              }
-            },
+            onPressed: () => Navigator.pop(ctx, true),
             child: const Text(
-              'Lưu',
+              'Xác nhận',
               style: TextStyle(color: AppColors.primary),
             ),
           ),
@@ -131,17 +89,16 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
       ),
     );
 
-    if (confirm == true) {
-      try {
-        await _adminRepo.resetPassword(widget.user!.id!, passC.text);
-        _snack('Reset mật khẩu thành công!');
-      } catch (e) {
-        _snack(
-          'Lỗi reset mật khẩu: ${e.toString().replaceFirst('Exception: ', '')}',
-        );
-      }
+    if (confirm != true) return;
+
+    try {
+      await _adminRepo.resetPassword(widget.user!.id!);
+      _snack('Reset mật khẩu thành công! Hệ thống đã gửi mật khẩu mới qua email.');
+    } catch (e) {
+      _snack(
+        'Lỗi reset mật khẩu: ${e.toString().replaceFirst('Exception: ', '')}',
+      );
     }
-    passC.dispose();
   }
 
   Future<void> _save() async {
@@ -161,15 +118,13 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
         }
 
         final payload = <String, dynamic>{
-          'fullName': _fullNameController.text.trim(),
           'isBanned': _isBanned,
-          'vipUntil': _vipUntil?.toIso8601String(),
         };
 
         await _adminRepo.updateUser(userId, payload);
 
         if (!mounted) return;
-        _snack('Cập nhật người dùng thành công!');
+        _snack('Cập nhật trạng thái ban thành công!');
       } else {
         final payload = <String, dynamic>{
           'username': _usernameController.text.trim(),
@@ -287,11 +242,20 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
+              ] else ...[
+                _buildTextField(
+                  controller: _emailController,
+                  labelText: 'Email',
+                  icon: Ionicons.mail_outline,
+                  enabled: false,
+                ),
+                const SizedBox(height: 16),
               ],
               _buildTextField(
                 controller: _fullNameController,
                 labelText: 'Họ tên đầy đủ',
                 icon: Ionicons.card_outline,
+                enabled: !_isEditing,
                 validator: (val) {
                   if ((val?.trim() ?? '').isEmpty) {
                     return 'Họ tên là bắt buộc';
@@ -480,69 +444,25 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border, width: 1),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Icon(
-                Ionicons.star,
-                color: isVip ? AppColors.star : AppColors.textDim,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  displayDate,
-                  style: TextStyle(
-                    color: isVip ? AppColors.star : Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-              if (_vipUntil != null)
-                IconButton(
-                  icon: const Icon(
-                    Ionicons.trash_outline,
-                    color: AppColors.danger,
-                    size: 18,
-                  ),
-                  onPressed: _clearVip,
-                ),
-            ],
+          Icon(
+            Ionicons.star,
+            color: isVip ? AppColors.star : AppColors.textDim,
+            size: 20,
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Gia hạn VIP:',
-            style: TextStyle(color: AppColors.textSubtle, fontSize: 13),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(child: _buildVipButton('+30 Ngày', 30)),
-              const SizedBox(width: 8),
-              Expanded(child: _buildVipButton('+90 Ngày', 90)),
-              const SizedBox(width: 8),
-              Expanded(child: _buildVipButton('+1 Năm', 365)),
-            ],
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              displayDate,
+              style: TextStyle(
+                color: isVip ? AppColors.star : Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildVipButton(String label, int days) {
-    return OutlinedButton(
-      onPressed: () => _extendVip(days),
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: AppColors.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(color: Colors.white, fontSize: 13),
       ),
     );
   }
