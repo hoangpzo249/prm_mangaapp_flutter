@@ -17,6 +17,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _newPassword = TextEditingController();
   final _confirmPassword = TextEditingController();
   bool _loading = false;
+  bool _obscureOld = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
  
   Future<void> _submit() async {
     if (_oldPassword.text.isEmpty ||
@@ -89,14 +92,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 10),
-                    _input(_oldPassword, 'Mật khẩu hiện tại',
-                        Ionicons.lock_closed_outline),
+                    _passwordInput(_oldPassword, 'Mật khẩu hiện tại',
+                        Ionicons.lock_closed_outline, _obscureOld, () {
+                      setState(() => _obscureOld = !_obscureOld);
+                    }),
                     const SizedBox(height: 15),
-                    _input(_newPassword, 'Mật khẩu mới',
-                        Ionicons.key_outline),
+                    _passwordInput(_newPassword, 'Mật khẩu mới',
+                        Ionicons.key_outline, _obscureNew, () {
+                      setState(() => _obscureNew = !_obscureNew);
+                    }),
                     const SizedBox(height: 15),
-                    _input(_confirmPassword, 'Nhập lại mật khẩu mới',
-                        Ionicons.key_outline),
+                    _passwordInput(_confirmPassword, 'Nhập lại mật khẩu mới',
+                        Ionicons.key_outline, _obscureConfirm, () {
+                      setState(() => _obscureConfirm = !_obscureConfirm);
+                    }),
                     const SizedBox(height: 8),
                     const Text(
                       'Mật khẩu mới tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.',
@@ -139,8 +148,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     );
   }
  
-  Widget _input(TextEditingController c, String hint, IconData icon,
-      {bool obscure = true}) {
+  Widget _passwordInput(TextEditingController c, String hint, IconData icon,
+      bool obscure, VoidCallback onToggle) {
     return Container(
       height: 55,
       padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -157,7 +166,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               controller: c,
               obscureText: obscure,
               autocorrect: false,
-              enableSuggestions: !obscure,
+              enableSuggestions: false,
               textCapitalization: TextCapitalization.none,
               cursorColor: AppColors.primary,
               style: const TextStyle(color: Colors.white, fontSize: 16),
@@ -168,6 +177,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 hintStyle: const TextStyle(
                     color: AppColors.textSubtle, fontSize: 16),
               ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onToggle,
+            child: Icon(
+              obscure ? Ionicons.eye_off_outline : Ionicons.eye_outline,
+              size: 20,
+              color: AppColors.textSubtle,
             ),
           ),
         ],
