@@ -30,7 +30,8 @@ class _HomeScreenState extends State<HomeScreen> {
   AppUser? _user;
   double _headerOffset = 0;
 
-  double get _headerHeight => 60;
+  double _paddingTop = 0;
+  double get _headerHeight => 60 + _paddingTop;
 
   @override
   void initState() {
@@ -83,6 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _paddingTop = MediaQuery.of(context).padding.top;
+
     if (_loading) {
       return const ColoredBox(
         color: AppColors.background,
@@ -165,6 +168,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _userButton() {
     final loggedIn = _user != null;
+    final avatarUrl = _user?.avatar;
+
     return GestureDetector(
       onTap: () async {
         await Navigator.pushNamed(
@@ -180,12 +185,28 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         alignment: Alignment.center,
         child: loggedIn
-            ? Text(
-                _user!.username.isNotEmpty
-                    ? _user!.username[0].toUpperCase()
-                    : 'U',
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold),
+            ? ClipOval(
+                child: avatarUrl != null && avatarUrl.isNotEmpty
+                    ? Image.network(
+                        avatarUrl,
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Text(
+                          _user!.username.isNotEmpty
+                              ? _user!.username[0].toUpperCase()
+                              : 'U',
+                          style: const TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      )
+                    : Text(
+                        _user!.username.isNotEmpty
+                            ? _user!.username[0].toUpperCase()
+                            : 'U',
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
               )
             : const Icon(Ionicons.person_outline,
                 size: 18, color: Colors.white),

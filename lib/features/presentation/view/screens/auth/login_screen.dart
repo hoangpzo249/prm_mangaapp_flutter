@@ -87,6 +87,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     _input(_password, 'Password', Ionicons.lock_closed_outline,
                         obscure: true),
                     const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                        child: const Text('Forgot Password?',
+                            style: TextStyle(color: AppColors.primary, fontSize: 14)),
+                      ),
+                    ),
+                    const SizedBox(height: 25),
                     _button(),
                     const SizedBox(height: 25),
                     _footer(),

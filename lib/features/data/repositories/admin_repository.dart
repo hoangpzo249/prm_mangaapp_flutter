@@ -1,12 +1,16 @@
 import '../../../core/networks/api_client.dart';
 import '../../application/services/api_provider.dart';
 import '../../domain/entities/app_user.dart';
+import '../../domain/entities/chapter.dart';
+import '../../domain/entities/story.dart';
 
 class AdminRepository {
-  AdminRepository._();
+  AdminRepository._() : _api = ApiProvider.client;
   static final AdminRepository instance = AdminRepository._();
 
-  final ApiClient _api = ApiProvider.client;
+  AdminRepository.forTesting(this._api);
+
+  final ApiClient _api;
 
   // --- Statistics ---
   Future<Map<String, dynamic>> fetchOverview() async {
@@ -76,17 +80,151 @@ class AdminRepository {
     }
   }
 
-  // --- Reports & Moderation ---
-  Future<List<Map<String, dynamic>>> fetchReports() async {
-    final res = await _api.get('/reports', auth: true);
+  // --- Story Management ---
+  Future<List<Story>> fetchStories() async {
+    final res = await _api.get('/stories');
     final data = ApiClient.decodeList(res);
-    return data.cast<Map<String, dynamic>>();
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(Story.fromJson)
+        .toList();
   }
 
-  Future<void> resolveReport(String id, String action) async {
+  Future<Story> fetchStoryById(String id) async {
+    final res = await _api.get('/stories/$id');
+    final data = ApiClient.decodeMap(res);
+    return Story.fromJson(data);
+  }
+
+  Future<void> createStory(Map<String, dynamic> data) async {
+    final res = await _api.post('/stories', body: data, auth: true);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Create story failed',
+      );
+    }
+  }
+
+  Future<void> updateStory(String id, Map<String, dynamic> data) async {
+    final res = await _api.put('/stories/$id', body: data, auth: true);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Update story failed',
+      );
+    }
+  }
+
+  /// Soft delete: đánh dấu ẩn truyện (backend chỉ set isHidden=true)
+  Future<void> deleteStory(String id) async {
+    final res = await _api.delete('/stories/$id', auth: true);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Hide story failed',
+      );
+    }
+  }
+
+  Future<void> restoreStory(String id) async {
+    final res = await _api.post('/stories/$id/restore', auth: true);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Restore story failed',
+      );
+    }
+  }
+
+  Future<List<Story>> fetchHiddenStories() async {
+    final res = await _api.get('/stories/admin/hidden', auth: true);
+    final data = ApiClient.decodeList(res);
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(Story.fromJson)
+        .toList();
+  }
+
+  // --- Chapter Management ---
+  Future<List<Chapter>> fetchChaptersByStory(String storyId) async {
+    final res = await _api.get('/chapters/story/$storyId');
+    final data = ApiClient.decodeList(res);
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(Chapter.fromJson)
+        .toList();
+  }
+
+  Future<void> createChapter(Map<String, dynamic> data) async {
+    final res = await _api.post('/chapters', body: data, auth: true);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Create chapter failed',
+      );
+    }
+  }
+
+  Future<void> updateChapter(String id, Map<String, dynamic> data) async {
+    final res = await _api.put('/chapters/$id', body: data, auth: true);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Update chapter failed',
+      );
+    }
+  }
+
+  /// Soft delete: đánh dấu ẩn chapter (backend chỉ set isHidden=true)
+  Future<void> deleteChapter(String id) async {
+    final res = await _api.delete('/chapters/$id', auth: true);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Hide chapter failed',
+      );
+    }
+  }
+
+  Future<void> restoreChapter(String id) async {
+    final res = await _api.post('/chapters/$id/restore', auth: true);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception(
+        ApiClient.decodeMap(res)['message'] ?? 'Restore chapter failed',
+      );
+    }
+  }
+
+  Future<List<Chapter>> fetchHiddenChaptersByStory(String storyId) async {
+    final res = await _api.get(
+      '/chapters/admin/story/$storyId/hidden',
+      auth: true,
+    );
+    final data = ApiClient.decodeList(res);
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(Chapter.fromJson)
+        .toList();
+  }
+
+  // --- Reports & Moderation ---
+  Future<Map<String, dynamic>> fetchReports({
+    String? status,
+    int? page,
+    int? limit,
+  }) async {
+    final query = <String>[];
+    if (status != null && status != 'all') query.add('status=$status');
+    if (page != null) query.add('page=$page');
+    if (limit != null) query.add('limit=$limit');
+    
+    final queryString = query.isNotEmpty ? '?${query.join('&')}' : '';
+    final res = await _api.get('/reports$queryString', auth: true);
+    return ApiClient.decodeMap(res);
+  }
+
+  Future<void> resolveReport(String id, String action, {String? adminNote}) async {
+    final body = <String, dynamic>{'action': action};
+    if (adminNote != null && adminNote.isNotEmpty) {
+      body['adminNote'] = adminNote;
+    }
     final res = await _api.put(
       '/reports/$id/resolve',
-      body: {'action': action},
+      body: body,
       auth: true,
     );
     if (res.statusCode < 200 || res.statusCode >= 300) {

@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../features/domain/entities/app_user.dart';
+import '../../features/domain/entities/story.dart';
 
+import '../../features/presentation/view/screens/admin/admin_chapter_form_screen.dart';
+import '../../features/presentation/view/screens/admin/admin_chapters_list_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_dashboard_screen.dart';
+import '../../features/presentation/view/screens/admin/admin_stories_list_screen.dart';
+import '../../features/presentation/view/screens/admin/admin_story_form_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_user_form_screen.dart';
 import '../../features/presentation/view/screens/admin/admin_users_list_screen.dart';
 
@@ -14,6 +19,9 @@ import '../../features/presentation/view/screens/main_tabs.dart';
 import '../../features/presentation/view/screens/notifications/notifications_screen.dart';
 import '../../features/presentation/view/screens/payment/payment_screen.dart';
 import '../../features/presentation/view/screens/profile/profile_screen.dart';
+import '../../features/presentation/view/screens/profile/edit_profile_screen.dart';
+import '../../features/presentation/view/screens/profile/change_password_screen.dart';
+import '../../features/presentation/view/screens/auth/forgot_password_screen.dart';
 import '../../features/presentation/view/screens/story/story_detail_screen.dart';
 import '../../features/presentation/view/screens/payment/transaction_history_screen.dart';
 import '../../features/presentation/view/screens/payment/vip_history_screen.dart';
@@ -38,7 +46,13 @@ class AppRoutes {
   static const String adminDashboard = '/admin-dashboard';
   static const String adminUsers = '/admin-users';
   static const String adminUserForm = '/admin-user-form';
-  static const String adminReports = '/admin-reports';
+  static const String adminStories = '/admin-stories';
+  static const String adminStoryForm = '/admin-story-form';
+  static const String adminChapters = '/admin-chapters';
+  static const String adminChapterForm = '/admin-chapter-form';
+  static const forgotPassword = '/forgotPassword';
+  static const editProfile = '/editProfile';
+  static const changePassword = '/changePassword';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final Uri uri = Uri.parse(settings.name ?? home);
@@ -113,9 +127,48 @@ class AppRoutes {
           settings,
         );
 
-      case adminReports:
-        return _fade(const _AdminReportsPlaceholderScreen(), settings);
+      case adminStories:
+        return _fade(const AdminStoriesListScreen(), settings);
 
+      case adminStoryForm:
+        final arguments = settings.arguments;
+
+        return _fade(
+          AdminStoryFormScreen(story: arguments is Story ? arguments : null),
+          settings,
+        );
+
+      case adminChapters:
+        final arguments = settings.arguments;
+
+        if (arguments is Story) {
+          return _fade(AdminChaptersListScreen(story: arguments), settings);
+        }
+
+        return _fade(const _RouteNotFoundScreen(), settings);
+
+      case adminChapterForm:
+        final arguments = settings.arguments;
+
+        if (arguments is AdminChapterFormArgs) {
+          return _fade(
+            AdminChapterFormScreen(
+              storyId: arguments.storyId,
+              storyTitle: arguments.storyTitle,
+              chapter: arguments.chapter,
+            ),
+            settings,
+          );
+        }
+
+        return _fade(const _RouteNotFoundScreen(), settings);
+
+      case AppRoutes.forgotPassword:
+        return _fade(const ForgotPasswordScreen(), settings);
+      case AppRoutes.editProfile:
+        return _fade(const EditProfileScreen(), settings);
+      case AppRoutes.changePassword:
+        return _fade(const ChangePasswordScreen(), settings);
       default:
         return _fade(const _RouteNotFoundScreen(), settings);
     }
@@ -143,27 +196,6 @@ class AppRoutes {
           ) {
             return FadeTransition(opacity: animation, child: child);
           },
-    );
-  }
-}
-
-class _AdminReportsPlaceholderScreen extends StatelessWidget {
-  const _AdminReportsPlaceholderScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Báo cáo vi phạm')),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'Chức năng báo cáo vi phạm đang được hoàn thiện.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16),
-          ),
-        ),
-      ),
     );
   }
 }

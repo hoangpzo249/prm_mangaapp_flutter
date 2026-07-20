@@ -50,13 +50,10 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     }
     _bookmarked = await _bookmarks.checkBookmark(widget.storyId);
 
-    final history = await _history.getReadingHistory();
-    for (final h in history) {
-      if (h.storyId == widget.storyId && h.chapterId != null) {
-        _continueChapterId = h.chapterId;
-        _continueChapterNumber = h.chapterNumber;
-        break;
-      }
+    final entry = await _history.getStoryHistory(widget.storyId);
+    if (entry != null && entry.chapterId != null) {
+      _continueChapterId = entry.chapterId;
+      _continueChapterNumber = entry.chapterNumber;
     }
 
     if (mounted) {
@@ -194,8 +191,15 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                               horizontal: 20, vertical: 10),
                           color: AppColors.card,
                         ),
+                        StoryInteractionSection(
+                          storyId: widget.storyId,
+                          showComments: false,
+                        ),
                         ChapterList(storyId: widget.storyId),
-                        StoryInteractionSection(storyId: widget.storyId),
+                        StoryInteractionSection(
+                          storyId: widget.storyId,
+                          showRating: false,
+                        ),
                       ],
                     ),
                   ),

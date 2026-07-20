@@ -111,8 +111,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 case 'users':
                   Navigator.pushNamed(context, AppRoutes.adminUsers);
                   break;
-                case 'reports':
-                  Navigator.pushNamed(context, AppRoutes.adminReports);
+                case 'stories':
+                  Navigator.pushNamed(context, AppRoutes.adminStories);
                   break;
               }
             },
@@ -131,13 +131,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ),
               PopupMenuItem<String>(
-                value: 'reports',
+                value: 'stories',
                 child: Row(
                   children: [
-                    Icon(Ionicons.flag_outline, color: AppColors.logo),
+                    Icon(Ionicons.book_outline, color: AppColors.gold),
                     SizedBox(width: 12),
                     Text(
-                      'Báo cáo vi phạm',
+                      'Quản lý truyện',
                       style: TextStyle(color: Colors.white),
                     ),
                   ],

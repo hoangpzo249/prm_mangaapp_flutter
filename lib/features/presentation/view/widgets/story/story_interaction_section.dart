@@ -14,7 +14,18 @@ import '../../../../domain/entities/rating_summary.dart';
 class StoryInteractionSection extends StatefulWidget {
   final String storyId;
 
-  const StoryInteractionSection({super.key, required this.storyId});
+  /// Cho phép ẩn phần Rating (khi widget này chỉ dùng để hiển thị comment)
+  final bool showRating;
+
+  /// Cho phép ẩn phần Comment (khi widget này chỉ dùng để hiển thị rating)
+  final bool showComments;
+
+  const StoryInteractionSection({
+    super.key,
+    required this.storyId,
+    this.showRating = true,
+    this.showComments = true,
+  });
 
   @override
   State<StoryInteractionSection> createState() => _StoryInteractionSectionState();
@@ -48,19 +59,29 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
 
   Future<void> _load() async {
     try {
-      final results = await Future.wait<dynamic>([
-        _commentsRepo.getByStory(widget.storyId),
-        _ratingsRepo.getByStory(widget.storyId),
-        _authRepo.getUserData(),
-      ]);
+      final futures = <Future<dynamic>>[_authRepo.getUserData()];
+      if (widget.showRating) {
+        futures.add(_ratingsRepo.getByStory(widget.storyId));
+      }
+      if (widget.showComments) {
+        futures.add(_commentsRepo.getByStory(widget.storyId));
+      }
+
+      final results = await Future.wait<dynamic>(futures);
       if (!mounted) return;
+
       setState(() {
-        _comments = results[0] as List<CommentItem>;
-        _rating = results[1] as RatingSummary;
-        _user = results[2] as AppUser?;
+        var index = 0;
+        _user = results[index++] as AppUser?;
+        if (widget.showRating) {
+          _rating = results[index++] as RatingSummary;
+        }
+        if (widget.showComments) {
+          _comments = results[index++] as List<CommentItem>;
+        }
       });
     } catch (error) {
-      _show('Không thể tải đánh giá hoặc bình luận: $error');
+      _show('Failed to load ratings or comments: $error');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -77,14 +98,14 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text('Cần đăng nhập', style: TextStyle(color: Colors.white)),
+        title: const Text('Login required', style: TextStyle(color: Colors.white)),
         content: const Text(
-          'Bạn cần đăng nhập để đánh giá hoặc bình luận.',
+          'You need to login to rate or comment.',
           style: TextStyle(color: AppColors.textLight),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Đăng nhập')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Login')),
         ],
       ),
     );
@@ -102,9 +123,9 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
       final result = await _ratingsRepo.rateStory(widget.storyId, score);
       if (!mounted) return;
       setState(() => _rating = result);
-      _show('Đã đánh giá $score sao');
+      _show('Rated $score star${score > 1 ? 's' : ''}');
     } catch (error) {
-      _show('Không thể đánh giá: $error');
+      _show('Failed to rate: $error');
     }
   }
 
@@ -126,9 +147,9 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
       final comments = await _commentsRepo.getByStory(widget.storyId);
       if (!mounted) return;
       setState(() => _comments = comments);
-      _show('Đã gửi bình luận');
+      _show('Comment posted');
     } catch (error) {
-      _show('Không thể gửi bình luận: $error');
+      _show('Failed to post comment: $error');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -139,13 +160,13 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text('Xóa bình luận?', style: TextStyle(color: Colors.white)),
-        content: const Text('Thao tác này không thể hoàn tác.', style: TextStyle(color: AppColors.textLight)),
+        title: const Text('Delete comment?', style: TextStyle(color: Colors.white)),
+        content: const Text('This action cannot be undone.', style: TextStyle(color: AppColors.textLight)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Xóa', style: TextStyle(color: AppColors.danger)),
+            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -154,9 +175,9 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
     try {
       await _commentsRepo.deleteComment(comment.id);
       await _load();
-      _show('Đã xóa bình luận');
+      _show('Comment deleted');
     } catch (error) {
-      _show('Không thể xóa bình luận: $error');
+      _show('Failed to delete comment: $error');
     }
   }
 
@@ -174,21 +195,24 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _ratingSection(),
-          const SizedBox(height: 24),
-          _commentComposer(),
-          const SizedBox(height: 16),
-          if (_loading)
-            const Center(child: CircularProgressIndicator(color: AppColors.primary))
-          else if (_comments.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Center(
-                child: Text('Chưa có bình luận', style: TextStyle(color: AppColors.textDim)),
-              ),
-            )
-          else
-            ..._comments.map(_commentCard),
+          if (widget.showRating) _ratingSection(),
+          if (widget.showRating && widget.showComments)
+            const SizedBox(height: 24),
+          if (widget.showComments) ...[
+            _commentComposer(),
+            const SizedBox(height: 16),
+            if (_loading)
+              const Center(child: CircularProgressIndicator(color: AppColors.primary))
+            else if (_comments.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: Text('No comments yet', style: TextStyle(color: AppColors.textDim)),
+                ),
+              )
+            else
+              ..._comments.map(_commentCard),
+          ],
         ],
       ),
     );
@@ -205,10 +229,10 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Đánh giá truyện', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Ratings', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(
-            '${_rating.averageRating.toStringAsFixed(1)}/5 • ${_rating.ratingCount} lượt đánh giá',
+            '${_rating.averageRating.toStringAsFixed(1)}/5 • ${_rating.ratingCount} rating${_rating.ratingCount == 1 ? '' : 's'}',
             style: const TextStyle(color: AppColors.textLight),
           ),
           const SizedBox(height: 10),
@@ -217,7 +241,7 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
               final score = index + 1;
               final selected = (_rating.yourScore ?? 0) >= score;
               return IconButton(
-                tooltip: '$score sao',
+                tooltip: '$score star${score > 1 ? 's' : ''}',
                 onPressed: () => _rate(score),
                 icon: Icon(
                   selected ? Ionicons.star : Ionicons.star_outline,
@@ -244,7 +268,7 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
           Row(
             children: [
               const Expanded(
-                child: Text('Bình luận', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                child: Text('Comments', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
               ),
               if (_replyToId != null)
                 TextButton(
@@ -252,12 +276,12 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
                     _replyToId = null;
                     _replyToName = null;
                   }),
-                  child: const Text('Hủy trả lời'),
+                  child: const Text('Cancel reply'),
                 ),
             ],
           ),
           if (_replyToName != null)
-            Text('Đang trả lời $_replyToName', style: const TextStyle(color: AppColors.primary)),
+            Text('Replying to $_replyToName', style: const TextStyle(color: AppColors.primary)),
           const SizedBox(height: 8),
           TextField(
             controller: _commentController,
@@ -265,7 +289,7 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
             maxLines: 4,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              hintText: 'Nhập nội dung bình luận...',
+              hintText: 'Write a comment...',
               hintStyle: const TextStyle(color: AppColors.textDim),
               filled: true,
               fillColor: AppColors.background,
@@ -281,7 +305,7 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
             child: ElevatedButton.icon(
               onPressed: _submitting ? null : _submitComment,
               icon: const Icon(Ionicons.send_outline),
-              label: Text(_submitting ? 'Đang gửi...' : 'Gửi'),
+              label: Text(_submitting ? 'Sending...' : 'Post'),
             ),
           ),
         ],
@@ -323,12 +347,12 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
                   _replyToId = comment.id;
                   _replyToName = comment.displayName;
                 }),
-                child: const Text('Trả lời'),
+                child: const Text('Reply'),
               ),
               if (canDelete)
                 TextButton(
                   onPressed: () => _deleteComment(comment),
-                  child: const Text('Xóa', style: TextStyle(color: AppColors.danger)),
+                  child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
                 ),
             ],
           ),
@@ -357,7 +381,7 @@ class _StoryInteractionSectionState extends State<StoryInteractionSection> {
                             alignment: Alignment.centerRight,
                             child: TextButton(
                               onPressed: () => _deleteComment(reply),
-                              child: const Text('Xóa', style: TextStyle(color: AppColors.danger)),
+                              child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
                             ),
                           ),
                       ],

@@ -5,10 +5,12 @@ import '../../domain/entities/user_subscription.dart';
 import '../../domain/entities/vip_package.dart';
 
 class PaymentRepository {
-  PaymentRepository._();
+  PaymentRepository._() : _api = ApiProvider.client;
   static final PaymentRepository instance = PaymentRepository._();
 
-  final ApiClient _api = ApiProvider.client;
+  PaymentRepository.forTesting(this._api);
+
+  final ApiClient _api;
 
   Future<List<VipPackage>> getPackages() async {
     final res = await _api.get('/vip/packages');

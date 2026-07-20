@@ -4,6 +4,7 @@ class AppUser {
   final String? email;
   final String? fullName;
   final String? role;
+  final String? avatar;
   final bool isVip;
   final bool isBanned;
   final DateTime? vipUntil;
@@ -15,6 +16,7 @@ class AppUser {
     this.email,
     this.fullName,
     this.role,
+    this.avatar,
     this.isVip = false,
     this.isBanned = false,
     this.vipUntil,
@@ -27,6 +29,7 @@ class AppUser {
     email: json['email']?.toString(),
     fullName: json['fullName']?.toString(),
     role: json['role']?.toString(),
+        avatar: json['avatar']?.toString(),
     isVip: json['isVip'] == true,
     isBanned: json['isBanned'] == true,
     vipUntil: json['vipUntil'] != null
@@ -38,40 +41,36 @@ class AppUser {
   );
 
   Map<String, dynamic> toJson() => {
-    '_id': id,
-    'username': username,
-    'email': email,
-    'fullName': fullName,
-    'role': role,
-    'isVip': isVip,
-    'isBanned': isBanned,
-    'vipUntil': vipUntil?.toIso8601String(),
-    'wallet': wallet?.toJson(),
-  };
+        '_id': id,
+        'username': username,
+        'email': email,
+        'fullName': fullName,
+        'role': role,
+        'isVip': isVip,
+        'vipUntil': vipUntil?.toIso8601String(),
+        'wallet': wallet?.toJson(),
+      };
 
   AppUser copyWith({
     String? id,
     String? username,
     String? email,
-    String? fullName,
-    String? role,
     bool? isVip,
     bool? isBanned,
     DateTime? vipUntil,
     Wallet? wallet,
-  }) {
-    return AppUser(
-      id: id ?? this.id,
-      username: username ?? this.username,
-      email: email ?? this.email,
-      fullName: fullName ?? this.fullName,
-      role: role ?? this.role,
-      isVip: isVip ?? this.isVip,
-      isBanned: isBanned ?? this.isBanned,
-      vipUntil: vipUntil ?? this.vipUntil,
-      wallet: wallet ?? this.wallet,
-    );
-  }
+  }) =>
+      AppUser(
+        id: id ?? this.id,
+        username: username ?? this.username,
+        email: email ?? this.email,
+        fullName: fullName ?? this.fullName,
+        role: role ?? this.role,
+        isVip: isVip ?? this.isVip,
+        isBanned: isBanned ?? this.isBanned,
+        vipUntil: vipUntil ?? this.vipUntil,
+        wallet: wallet ?? this.wallet,
+      );
 }
 
 class Wallet {
