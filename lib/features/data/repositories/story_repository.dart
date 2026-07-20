@@ -3,10 +3,12 @@ import '../../application/services/api_provider.dart';
 import '../../domain/entities/story.dart';
 
 class StoryRepository {
-  StoryRepository._();
+  StoryRepository._() : _api = ApiProvider.client;
   static final StoryRepository instance = StoryRepository._();
 
-  final ApiClient _api = ApiProvider.client;
+  StoryRepository.forTesting(this._api);
+
+  final ApiClient _api;
 
   Future<List<Story>> _stories(String path) async {
     try {

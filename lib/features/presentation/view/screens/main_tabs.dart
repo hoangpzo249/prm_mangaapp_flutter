@@ -5,6 +5,8 @@ import '../../../../core/constants/app_colors.dart';
 import 'explore/explore_screen.dart';
 import 'history/history_screen.dart';
 import 'home/home_screen.dart';
+import 'payment/payment_screen.dart';
+import 'profile/profile_screen.dart';
 
 /// Lets descendants request a tab switch, optionally passing a sort mode
 /// or genre filter to the Explore tab.
@@ -64,6 +66,8 @@ class _MainTabsState extends State<MainTabs> {
         initialGenreIds: _exploreGenreIds,
       ),
       HistoryScreen(refreshTrigger: _historyRefresh),
+      const PaymentScreen(),
+      const ProfileScreen(),
     ];
 
     return TabsScope(
@@ -87,6 +91,8 @@ class _MainTabsState extends State<MainTabs> {
                     _tab(0, Ionicons.home, 'Home'),
                     _tab(1, Ionicons.list, 'Manga List'),
                     _tab(2, Ionicons.time, 'History'),
+                    _tab(3, Ionicons.diamond, 'VIP'),
+                    _tab(4, Ionicons.person, 'Account'),
                   ],
                 ),
               ),
