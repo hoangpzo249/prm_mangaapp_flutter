@@ -385,16 +385,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
 
     final spots = <FlSpot>[];
+    double maxVal = 0;
     for (int i = 0; i < _userGrowthData.length; i++) {
       final val = (_userGrowthData[i]['count'] as num?)?.toDouble() ?? 0.0;
       spots.add(FlSpot(i.toDouble(), val));
+      if (val > maxVal) maxVal = val;
     }
+
+    // Ensure the y-axis has a sensible top even when all values are 0
+    final maxY = maxVal < 1 ? 1.0 : (maxVal.ceilToDouble());
+    final interval = maxY <= 5 ? 1.0 : (maxY / 5).ceilToDouble();
 
     return LineChart(
       LineChartData(
+        minY: 0,
+        maxY: maxY,
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
+          horizontalInterval: interval,
           getDrawingHorizontalLine: (value) =>
               const FlLine(color: AppColors.border, strokeWidth: 0.5),
         ),
@@ -406,9 +415,31 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           topTitles: const AxisTitles(
             sideTitles: SideTitles(showTitles: false),
           ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: interval,
+              reservedSize: 28,
+              getTitlesWidget: (value, meta) {
+                // Only draw whole numbers
+                if (value != value.roundToDouble()) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(right: 4.0),
+                  child: Text(
+                    value.toInt().toString(),
+                    style: const TextStyle(
+                      color: AppColors.textSubtle,
+                      fontSize: 10,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              interval: 1,
               getTitlesWidget: (value, meta) {
                 final idx = value.toInt();
                 if (idx >= 0 && idx < _userGrowthData.length) {
@@ -437,7 +468,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         lineBarsData: [
           LineChartBarData(
             spots: spots,
-            isCurved: true,
+            isCurved: false,
             barWidth: 3,
             color: AppColors.primary,
             dotData: const FlDotData(show: true),
@@ -459,16 +490,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
 
     final spots = <FlSpot>[];
+    double maxVal = 0;
     for (int i = 0; i < _revenueData.length; i++) {
       final val = (_revenueData[i]['revenue'] as num?)?.toDouble() ?? 0.0;
       spots.add(FlSpot(i.toDouble(), val));
+      if (val > maxVal) maxVal = val;
+    }
+
+    // Round the top of the axis up to a "nice" number so ticks stay whole
+    final maxY = maxVal < 1000 ? 1000.0 : _niceCeil(maxVal);
+    final interval = maxY / 4;
+
+    String formatRevenue(double v) {
+      if (v >= 1000000000) return '${(v / 1000000000).toStringAsFixed(v % 1000000000 == 0 ? 0 : 1)}B';
+      if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(v % 1000000 == 0 ? 0 : 1)}M';
+      if (v >= 1000) return '${(v / 1000).toStringAsFixed(v % 1000 == 0 ? 0 : 1)}K';
+      return v.toInt().toString();
     }
 
     return LineChart(
       LineChartData(
+        minY: 0,
+        maxY: maxY,
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
+          horizontalInterval: interval,
           getDrawingHorizontalLine: (value) =>
               const FlLine(color: AppColors.border, strokeWidth: 0.5),
         ),
@@ -480,9 +527,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           topTitles: const AxisTitles(
             sideTitles: SideTitles(showTitles: false),
           ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: interval,
+              reservedSize: 40,
+              getTitlesWidget: (value, meta) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 4.0),
+                  child: Text(
+                    formatRevenue(value),
+                    style: const TextStyle(
+                      color: AppColors.textSubtle,
+                      fontSize: 10,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              interval: 1,
               getTitlesWidget: (value, meta) {
                 final idx = value.toInt();
                 if (idx >= 0 && idx < _revenueData.length) {
@@ -510,7 +577,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         lineBarsData: [
           LineChartBarData(
             spots: spots,
-            isCurved: true,
+            isCurved: false,
             barWidth: 3,
             color: AppColors.gold,
             dotData: const FlDotData(show: true),
@@ -522,5 +589,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ],
       ),
     );
+  }
+
+  double _niceCeil(double value) {
+    if (value <= 0) return 1;
+    final exponent = (value.toString().length - 1).clamp(0, 12);
+    final magnitude = _pow10(exponent);
+    return (value / magnitude).ceilToDouble() * magnitude;
+  }
+
+  double _pow10(int n) {
+    double r = 1;
+    for (int i = 0; i < n; i++) {
+      r *= 10;
+    }
+    return r;
   }
 }
